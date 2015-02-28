@@ -1,0 +1,117 @@
+.notify {
+  position: fixed;
+  width: 300px;
+  height: 100px;
+  border-radius: @border-radius-large;
+  border: 1px solid black;
+  z-index: @zindex-popover;
+  margin: @padding-large-vertical @padding-large-horizontal;
+
+  &.info {
+    background-color: fade(@alert-info-bg, 70%);
+    border-color: @alert-info-border;
+    &:hover {
+      background-color: fade(@alert-info-bg, 90%);
+    }
+    .notify-bar {
+      background-color: @brand-info;
+      color: @btn-info-color;
+    }
+  }
+  &.success {
+    background-color: fade(@alert-success-bg, 70%);
+    border-color: @alert-success-border;
+    &:hover {
+      background-color: fade(@alert-success-bg, 90%);
+    }
+    .notify-bar {
+      background-color: @brand-success;
+      color: @btn-success-color;
+    }
+  }
+  &.warning {
+    background-color: fade(@alert-warning-bg, 70%);
+    border-color: @alert-warning-border;
+    &:hover {
+      background-color: fade(@alert-warning-bg, 90%);
+    }
+    .notify-bar {
+      background-color: @brand-warning;
+      color: @btn-warning-color;
+    }
+  }
+  &.danger {
+    background-color: fade(@alert-danger-bg, 70%);
+    border-color: @alert-danger-border;
+    &:hover {
+      background-color: fade(@alert-danger-bg, 90%);
+    }
+    .notify-bar {
+      background-color: @brand-danger;
+      color: @btn-danger-color;
+    }
+  }
+
+  .notify-bar {
+    float: right;
+    height: 100%;
+    width: 35px;
+    border-radius: 0 @border-radius-large @border-radius-large 0;
+    padding: @padding-large-vertical @padding-xs-horizontal;
+
+    .timer {
+      position: relative;
+      font-size: 25px;
+      width: 1em;
+      height: 1em;
+      float: left;
+
+      .percent {
+        position: absolute;
+        top: 0.25em;
+        left: 0.66em;
+        font-size: 0.5em;
+        text-align: center;
+      }
+
+      .slice {
+        position: absolute;
+        width: 1em;
+        height: 1em;
+        clip: rect(0px, 1em, 1em, 0.5em);
+
+        &.gt50 {
+          clip: rect(auto, auto, auto, auto);
+        }
+
+        .pie {
+          border: 0.1em solid #ffffff;
+          position: absolute;
+          width: 1em;
+          height: 1em;
+          clip: rect(0em, 0.5em, 1em, 0em);
+          border-radius: 0.5em;
+
+          &.fill {
+            transform: rotate(180deg) !important;
+          }
+        }
+      }
+    }
+  }
+
+  .notify-body {
+    height: 100%;
+    padding: @padding-large-vertical 0px @padding-large-vertical @padding-base-horizontal;
+
+    .title {
+      font-weight: bold;
+    }
+
+    .content {
+      overflow: auto;
+      height: 69px;
+      padding-right: 45px;
+    }
+  }
+}

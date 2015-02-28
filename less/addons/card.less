@@ -1,0 +1,91 @@
+@card-width: 430px;
+@card-height: 290px;
+
+.card {
+  padding: @padding-xs-vertical @padding-xs-horizontal;
+  display: inline-block;
+
+  &.card-w1 {
+    width: (@card-width * 1);
+  }
+
+  &.card-w2 {
+    width: (@card-width * 2);
+  }
+
+  &.card-h1 {
+    height: (@card-height * 1);
+    .panel-body {
+      height: (@card-height - 68);
+    }
+  }
+
+  &.card-h2 {
+    height: (@card-height * 2);
+    .panel-body {
+      height: (@card-height * 2 - 68);
+    }
+  }
+
+  .panel-primary {
+    .card-heading-variant(@brand-primary);
+  }
+
+  .panel-secondary {
+    .card-heading-variant(@brand-secondary);
+  }
+
+  .panel-success {
+    .card-heading-variant(@brand-success);
+  }
+
+  .panel-info {
+    .card-heading-variant(@brand-info);
+  }
+
+  .panel-warning {
+    .card-heading-variant(@brand-warning);
+  }
+
+  .panel-danger {
+    .card-heading-variant(@brand-danger);
+  }
+
+  .panel-heading {
+    background-color: @panel-default-heading-bg;
+
+    .btn-group {
+      margin-top: -9px;
+
+      &.btn-group-sm {
+        margin-top: -6px;
+      }
+
+      &.btn-group-xs {
+        margin-top: -3px;
+      }
+    }
+
+    .panel-title {
+      font-weight: bold;
+    }
+  }
+
+  .panel-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  table {
+    margin-bottom: 0px;
+  }
+
+  .card-heading-variant(@brand) {
+    border: 1px solid @panel-default-border;
+
+    .panel-heading {
+      border-bottom: 3px solid @brand;
+      color: @brand;
+    }
+  }
+}

@@ -1,0 +1,37 @@
+@brand-secondary: #359b73; //#ff8900;
+
+@btn-secondary-color: #fff;
+@btn-secondary-bg: @brand-secondary;
+@btn-secondary-border: darken(@btn-secondary-bg, 5%);
+
+@state-secondary-text: darken(@brand-secondary, 10%);
+@state-secondary-bg: lighten(@brand-secondary, 30%);
+@state-secondary-border: darken(spin(@state-secondary-bg, -10), 5%);
+
+@label-secondary-bg: @brand-secondary;
+
+@progress-bar-secondary-bg: @brand-secondary;
+
+@panel-secondary-text: #ffffff;
+@panel-secondary-border: @state-secondary-border;
+@panel-secondary-heading-bg: @brand-secondary;
+
+.btn-secondary {
+  .button-variant(@btn-secondary-color; @btn-secondary-bg; @btn-secondary-border);
+}
+
+.label-secondary {
+  .label-variant(@label-secondary-bg);
+}
+
+.panel-secondary {
+  .panel-variant(@panel-secondary-border; @panel-secondary-text; @panel-secondary-heading-bg; @panel-secondary-border);
+}
+
+.text-secondary {
+  .text-emphasis-variant(@state-secondary-text);
+}
+
+.bg-secondary {
+  .bg-variant(@state-secondary-bg);
+}
