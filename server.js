@@ -4,8 +4,10 @@ var glbMockRouter = require('./server/glb-mock')(express);
 var config = require('./config');
 var dataFetcher = require('./server/data-fetcher');
 
-dataFetcher.login(function(account) {
+dataFetcher.login().then(function(account) {
   console.info("I have logged in with account", account);
+}).catch(function(error) {
+  console.error("I have broken somewhere", error);
 });
 
 var app = express();
