@@ -10,7 +10,7 @@
 </head>
 
 <body>
-<nav class="navbar navbar-default navbar-fixed-top">
+<nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="navbar-header">
     <button type="button" class="navbar-toggle collapsed" ng-click="isTopExpanded = !isTopExpanded">
       <span class="icon-bar"></span>
@@ -21,12 +21,13 @@
   </div>
   <div class="collapse navbar-collapse" collapse="!isTopExpanded">
     <ul class="nav navbar-nav">
+      <li><a href="#/build">Build</a></li>
       <li class="active"><a href>Active</a></li>
       <li><a href>Link</a></li>
       <li class="dropdown navbar-entry" dropdown="">
         <a href class="dropdown-toggle" dropdown-toggle="">Dropdown <b class="caret"></b></a>
         <ul class="dropdown-menu">
-          <li><a href>Action</a></li>
+          <li><a href="#/theme">Theme</a></li>
           <li><a href>Another action</a></li>
           <li><a href>Something else here</a></li>
           <li class="divider"></li>
@@ -65,6 +66,10 @@
 </nav>
 
 <div notifications=""></div>
+
+<div class="container-fluid" style="margin-top: 60px;">
+  <div ng-view=""></div>
+</div>
 
 <script src="js/vendor.min.js"></script>
 <script src="js/sliqsolv-seed.js"></script>

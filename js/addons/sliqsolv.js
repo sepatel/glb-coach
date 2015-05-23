@@ -1,3 +1,4 @@
 (function(angular) {
-  var sliqsolv = angular.module("sliqsolv", ['ssFixedHeaders', 'ssFlippable', 'ssNotify']);
+  var sliqsolv = angular.module("sliqsolv", ['ssCheckbox', 'ssFixedHeaders', 'ssFlippable', 'ssNotify', 'ssRadio',
+    'ssStorage', 'ssUpgrade']);
 }(angular));
