@@ -3,7 +3,7 @@ var Q = require('q');
 var Cheerio = require('cheerio');
 var _ = require('underscore');
 
-var MongoClient = require('mongodb').MongoClient;
+var Database = require('./database');
 var DBRef = require('mongodb').DBRef;
 var Request = require('request');
 var Cookie = require('tough-cookie').Cookie;
@@ -12,16 +12,15 @@ var Config = require('../config');
 
 var cookieJar = Request.jar();
 var activeAccount;
-var db;
-var playbook = {};
-var playerArchtypeCache = {};
+var playbook = Database.playbook;
+var playerArchtypeCache = Database.playerArchtypeCache;
 
 var me = module.exports = {
   login: login,
   build: {
     get: function() {
       var defer = Q.defer();
-      db.collection('buildGuide').find().toArray(function(err, docs) {
+      Database.db.collection('buildGuide').find().toArray(function(err, docs) {
         if (err) {
           return defer.reject(err);
         }
@@ -31,7 +30,7 @@ var me = module.exports = {
     },
     remove: function(buildId) {
       var defer = Q.defer();
-      db.collection('buildGuide').findAndRemove({_id: buildId}, function(error, doc) {
+      Database.db.collection('buildGuide').findAndRemove({_id: buildId}, function(error, doc) {
         if (error) {
           return defer.reject(error);
         }
@@ -41,7 +40,7 @@ var me = module.exports = {
     },
     save: function(build) {
       var defer = Q.defer();
-      db.collection('buildGuide').update({_id: build._id}, build, {upsert: true}, function(error, count, status) {
+      Database.db.collection('buildGuide').update({_id: build._id}, build, {upsert: true}, function(error, count, status) {
         if (error) {
           return defer.reject(error);
         }
@@ -93,7 +92,7 @@ var me = module.exports = {
 
     request("game" + gameId, {url: Config.glbUrl + '/game.pl?game_id=' + gameId + '&mode=pbp'}).then(function(content) {
       parseGamePage(content).then(function(game) {
-        db.collection('game').update({_id: game._id}, {$set: game}, {upsert: true}, function(error, result) {
+        Database.db.collection('game').update({_id: game._id}, {$set: game}, {upsert: true}, function(error, result) {
           if (error) {
             return defer.reject("Unable to save the game", game, error);
           }
@@ -112,10 +111,18 @@ var me = module.exports = {
     }).then(function(content) {
       var $ = Cheerio.load(content.toString());
       var scriptNode = $('body script').get(1).children[0].data;
-      var timeMatch = $('span#time_ytg').first().text().match(/(\d+):(\d+) (\d)\w{0,2} & (inches|[\-\.\d]+) on (?:(\w+) ([\-\.\d]+))?/);
+      var timeMatch = $('span#time_ytg').first().text().match(/(\d+):(\d+) (\d)\w{0,2} & (G|inches|[\-\.\d]+) on (?:(\w+) ([\-\.\d]+))?/);
       if (!timeMatch) {
         // Kickoff or Extra point attempt when no marker point exists
         console.info("Unable to parse", gameId, replayId, $('span#time_ytg').first().text(), $('div.play#outcome_content').first().text());
+      }
+      var distance = 0;
+      if (timeMatch[4] == 'G') {
+        distance = parseFloat(timeMatch[6] || 0);
+      } else if (timeMatch[4] == 'inches') {
+        distance = 0;
+      } else {
+        distance = parseFloat(timeMatch[4] || 0);
       }
       var play = {
         gameId: gameId,
@@ -125,7 +132,7 @@ var me = module.exports = {
         quarter: matchForInt($find($('div#replay_header h1')), /Q(\d)/),
         timeRemaining: parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]),
         down: parseInt(timeMatch[3]),
-        distance: parseFloat(timeMatch[4] || 0),
+        distance: distance,
         marker: parseFloat(timeMatch[6] || 0) + (timeMatch[5] == 'OPP' ? 50 : 0),
         players: [],
         offense: matchForDBRef(scriptNode, /var away = '(\d+)'/, "team"),
@@ -154,14 +161,16 @@ var me = module.exports = {
           }
         }
       });
-      // TODO: assume ball is 4.25y behind line of scrimmage, is it 3y = 1 yard? vary by formation?
-      play.yards = Math.abs(ballPlays[ballPlays.length - 1].y - ballPlays[0].y) - 4.25;
-      // TODO: Deflected passes should be treated as 0 yards, perhaps a new field for distance ball travelled to know if screens or what are happening
+      if (!play.outcome.match(/(Off|Def)ensive Timeout Called: (.+)/)) {
+        // TODO: assume ball is 4.25y behind line of scrimmage, is it 3y = 1 yard? vary by formation?
+        play.yards = Math.abs(ballPlays[ballPlays.length - 1].y - ballPlays[0].y);
+        // TODO: Deflected passes should be treated as 0 yards, perhaps a new field for distance ball travelled to know if screens or what are happening
 
-      play.defensivePlay = getDefensivePlayName($('div#defense_play_container').first().text(), play.players);
-      play.offensivePlay = getOffensivePlayName($("div#play_container").first().text().trim().replace(/Offense Play:/, ''), play.formation);
+        play.defensivePlay = getDefensivePlayName($('div#defense_play_container').first().text(), play.players);
+        play.offensivePlay = getOffensivePlayName($("div#play_container").first().text().trim().replace(/Offense Play:/, ''), play.formation);
+      }
 
-      db.collection('play').update({gameId: gameId, replayId: replayId}, {$set: play}, {upsert: true}, function(error, result) {
+      Database.db.collection('play').update({gameId: gameId, replayId: replayId}, {$set: play}, {upsert: true}, function(error, result) {
         if (error) {
           return defer.reject("Unable to save replay", gameId, replayId, error);
         }
@@ -199,7 +208,7 @@ var me = module.exports = {
           level: parseInt($(element).find("td.player_level").first().text())
         };
 
-        db.collection('player').update({_id: player._id}, {$set: player}, {upsert: true}, function(error, result) {
+        Database.db.collection('player').update({_id: player._id}, {$set: player}, {upsert: true}, function(error, result) {
           if (error) {
             return console.error("Error when updating player", player._id, error);
           }
@@ -214,7 +223,7 @@ var me = module.exports = {
     request("team" + teamId, { url: Config.glbUrl + '/roster.pl?team_id=' + teamId }).then(function(content) {
       var team = parseTeamPage(content);
 
-      db.collection('team').update({_id: team._id}, {$set: team}, {upsert: true}, function(error, result) {
+      Database.db.collection('team').update({_id: team._id}, {$set: team}, {upsert: true}, function(error, result) {
         if (error) {
           return defer.reject("Unable to save the team", team, error);
         }
@@ -224,30 +233,6 @@ var me = module.exports = {
     return defer.promise;
   }
 };
-
-Q.nfcall(MongoClient.connect, Config.mongo).then(function(mongodb) {
-  db = mongodb;
-  db.collection('playbook').find(function(err, docs) {
-    docs.forEach(function(play) {
-      playbook[play._id] = {
-        name: play.name,
-        formation: play.formation,
-        type: play.type
-      };
-    });
-    console.log("Initialized playbook");
-  });
-
-  db.collection('player').find(function(err, docs) {
-    docs.forEach(function(player) {
-      playerArchtypeCache[player._id] = player.archetype;
-    });
-    console.log("Initialized player archetypes");
-  });
-}).catch(function(error) {
-  console.info("Unable to establish a connection to the database. Existing application", error);
-  process.exit(1);
-}).all();
 
 function determineArchetype(tip) {
   return tip.replace(/set_tip\('(.+?)',.*/, "$1");
@@ -260,8 +245,8 @@ function getOffensivePlayName(playName, formation) {
       match = play;
     }
   });
-  if (!match) {
-    console.info("Offensive Play Did not match", playName, formation);
+  if (!match && playName != 'Kickoff Return' && playName != 'Punt' && playName != 'Field Goal') {
+    console.info("Offensive Play did not match", playName, formation);
     return playName;
   }
   return match;
@@ -361,13 +346,13 @@ function determineFormation(initialPlayData, players) {
       }
     });
 
-    if (Math.abs(hb.y - fb.y) < 2) {
+    if (Math.abs(hb.y - fb.y) < 3) {
       return "Pro Set";
-    } else if (Math.abs(distanceX) < 2) {
+    } else if (Math.abs(distanceX) < 3) {
       return "I Form";
-    } else if (distanceX > 2) {
+    } else if (distanceX > 3) {
       return "Weak I";
-    } else if (distanceX < 2) {
+    } else if (distanceX < 3) {
       return "Strong I";
     }
   } else if (playerCounts.wr.length == 1) {
@@ -379,7 +364,7 @@ function determineFormation(initialPlayData, players) {
 
 function login() {
   var defer = Q.defer();
-  var configCollection = db.collection('config');
+  var configCollection = Database.db.collection('config');
   configCollection.findOne({_id: 'account'}, function(error, account) {
     if (error) {
       return defer.reject("Unable to read the database");
@@ -436,7 +421,7 @@ function request(cacheId, options, timeout) {
       if (response.statusCode >= 400) {
         return defer.reject(response.statusCode);
       } else if (body.match(/window.location.replace\("\/game\/login.pl/)) {
-        db.collection('config').update({_id: 'account'}, {'$unset': {expiration: 1, cookies: 1}}, function(error) {
+        Database.db.collection('config').update({_id: 'account'}, {'$unset': {expiration: 1, cookies: 1}}, function(error) {
           if (error) {
             console.error("Unable to clear account status", error);
             return defer.reject(401);
@@ -489,4 +474,3 @@ function matchForInt(string, pattern) {
   }
   return null;
 }
-
