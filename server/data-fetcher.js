@@ -110,7 +110,6 @@ var me = module.exports = {
       url: Config.glbUrl + '/replay.pl?game_id=' + gameId + '&pbp_id=' + replayId
     }).then(function(content) {
       var $ = Cheerio.load(content.toString());
-      var scriptNode = $('body script').get(1).children[0].data;
       var timeMatch = $('span#time_ytg').first().text().match(/(\d+):(\d+) (\d)\w{0,2} & (G|inches|[\-\.\d]+) on (?:(\w+) ([\-\.\d]+))?/);
       if (!timeMatch) {
         // Kickoff or Extra point attempt when no marker point exists
@@ -124,6 +123,16 @@ var me = module.exports = {
       } else {
         distance = parseFloat(timeMatch[4] || 0);
       }
+
+      var scriptNode = null;
+      $('body script').each(function(index, content) {
+        var node = content.children[0].data;
+        if (node.match(/var next_play_id = /)) {
+          scriptNode = node;
+        }
+      });
+      var awayId = matchForDBRef(scriptNode, /var away = '(\d+)'/, "team");
+      var homeId = matchForDBRef(scriptNode, /var home = '(\d+)'/, "team");
       var play = {
         gameId: gameId,
         replayId: replayId,
@@ -135,9 +144,16 @@ var me = module.exports = {
         distance: distance,
         marker: parseFloat(timeMatch[6] || 0) + (timeMatch[5] == 'OPP' ? 50 : 0),
         players: [],
-        offense: matchForDBRef(scriptNode, /var away = '(\d+)'/, "team"),
-        defense: matchForDBRef(scriptNode, /var home = '(\d+)'/, "team")
+        offense: awayId,
+        defense: homeId
       };
+
+      var offLogo = $("div#offense_container .team_logo img").attr('src');
+      var logoTeamId = offLogo.match(/team_id=(\d+)/);
+      if (homeId && logoTeamId[1] == homeId.oid) {
+        play.offense = homeId;
+        play.defense = awayId;
+      }
 
       // parse players involved in the plays, note this logic breaks on timeouts (specifically the match == null)
       var match = scriptNode.match(/var players = (\{.+?\}\});\s*/) || [null, '{}'];
@@ -162,8 +178,9 @@ var me = module.exports = {
         }
       });
       if (!play.outcome.match(/(Off|Def)ensive Timeout Called: (.+)/)) {
-        // TODO: assume ball is 4.25y behind line of scrimmage, is it 3y = 1 yard? vary by formation?
-        play.yards = Math.abs(ballPlays[ballPlays.length - 1].y - ballPlays[0].y);
+        //console.info("Cannot do *ABS* distance because loss of yards becomes inaccurate information then. Find better way!!!");
+        play.yards = (Math.abs(ballPlays[ballPlays.length - 1].y - ballPlays[0].y) - 5) / 3;
+
         // TODO: Deflected passes should be treated as 0 yards, perhaps a new field for distance ball travelled to know if screens or what are happening
 
         play.defensivePlay = getDefensivePlayName($('div#defense_play_container').first().text(), play.players);
