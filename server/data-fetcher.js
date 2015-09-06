@@ -142,11 +142,15 @@ var me = module.exports = {
         timeRemaining: parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]),
         down: parseInt(timeMatch[3]),
         distance: distance,
-        marker: parseFloat(timeMatch[6] || 0) + (timeMatch[5] == 'OPP' ? 50 : 0),
+        marker: parseFloat(timeMatch[6] || 0),
         players: [],
         offense: awayId,
         defense: homeId
       };
+
+      if (timeMatch[5] == 'OWN') {
+        play.marker = 100 - play.marker;
+      }
 
       var offLogo = $("div#offense_container .team_logo img").attr('src');
       var logoTeamId = offLogo.match(/team_id=(\d+)/);
