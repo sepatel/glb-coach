@@ -1,4 +1,5 @@
 var DataFetcher = require('./data-fetcher');
+var GamePlanner = require('./game-planner');
 
 module.exports = function(app) {
   var router = app.Router();
@@ -22,6 +23,22 @@ module.exports = function(app) {
   router.post('/build', function(req, res) {
     console.info("Save Guide", req.body);
     respond(res, DataFetcher.build.save(req.body));
+  });
+
+  router.get('/offense/ai/:teamId', function(req, res) {
+    respond(res, GamePlanner.gamePlanOffAiStats(req.params.teamId));
+  });
+
+  router.post('/offense/ai', function(req, res) {
+    var opponentId = req.body.teamId;
+    var gameIds = req.body.gameIds;
+    GamePlanner.gamePlanOffAiFact(opponentId, gameIds).then(function(facts) {
+      respond(res, GamePlanner.gamePlanOffAiStats(opponentId));
+    }).catch(function(error) {
+      console.info("Error", error);
+      res.status(500);
+      res.send({error: error});
+    });
   });
 
   return router;
