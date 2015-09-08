@@ -26,7 +26,7 @@ module.exports = function(app) {
   });
 
   router.get('/offense/ai/:teamId', function(req, res) {
-    respond(res, GamePlanner.gamePlanOffAiStats(req.params.teamId));
+    respond(res, GamePlanner.gamePlanOffAiStats(parseInt(req.params.teamId)));
   });
 
   router.post('/offense/ai', function(req, res) {

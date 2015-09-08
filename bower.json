@@ -2,11 +2,11 @@
   "name": "seed-ui",
   "dependencies": {
     "jquery": "1.x",
-    "angular": "1.3.13",
-    "angular-animate": "1.3.13",
-    "angular-route": "1.3.13",
-    "bootstrap": "3.1.1",
-    "angular-ui-bootstrap": "0.12.0",
-    "ui-utils": "0.2.1"
+    "angular": "1.3.x",
+    "angular-animate": "1.3.x",
+    "angular-route": "1.3.x",
+    "bootstrap": "3.x",
+    "angular-ui-bootstrap": "0.x",
+    "ui-utils": "0.x"
   }
 }

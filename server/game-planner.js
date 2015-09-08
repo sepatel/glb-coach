@@ -6,14 +6,15 @@ var DBRef = require('mongodb').DBRef;
 module.exports = {
   gamePlanOffAiFact: function(defensiveTeamId, gameIds) {
     var defer = Q.defer();
-    Database.db.collection('play').mapReduce(offAiMapper, offAiReducer, {
-      query: {
-        gameId: {$in: gameIds},
-        defense: DBRef('team', defensiveTeamId),
-        'offensivePlay.type': new RegExp(/Run|Pass_Screen/) // incomplete passes are inaccurate right now and throw off everything
-      },
-      out: {inline: 1}
-    }, function(err, records) {
+    var query = {
+      defense: DBRef('team', defensiveTeamId),
+      outcome: {$not: /^False start penalty/},
+      'offensivePlay.type': new RegExp(/Run|Pass_Screen/) // incomplete passes are inaccurate right now and throw off everything
+    };
+    if (gameIds) {
+      query.gameId = {$in: gameIds};
+    }
+    Database.db.collection('play').mapReduce(offAiMapper, offAiReducer, { query: query, out: {inline: 1} }, function(err, records) {
       if (err) return defer.reject(err);
 
       var gamePlan = Database.db.collection('gamePlan');
@@ -47,7 +48,7 @@ module.exports = {
 
     return defer.promise;
   },
-  gamePlanOffAiStats: function(defensiveTeamId, gameIds) {
+  gamePlanOffAiStats: function(defensiveTeamId) {
     var defer = Q.defer();
     var analysis = {};
     var gamePlan = Database.db.collection('gamePlan');
@@ -58,7 +59,7 @@ module.exports = {
         return (yards.loss * -1) + (yards.bad) + (yards.normal * 1.5) + (yards.good * 2) + (yards.great * 2.5) + (yards.awesome * 3);
       }
 
-      return score(a.yards) - score(b.yards);
+      return score(b.yards) - score(a.yards);
     }
 
     function qCursorResults(key, cursor) {
@@ -82,6 +83,7 @@ module.exports = {
     // 2nd down, 4 - 7
     // 2nd down, 7 - 99+
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       zone: 'normal',
       down: {$in: [1, 2]}}).then(function(cursor) {
       return qCursorResults('AB', cursor);
@@ -90,6 +92,7 @@ module.exports = {
     // C Packages (5 best)
     // 3rd/4th down, 7 = 99+
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       zone: 'normal',
       down: {$in: [3, 4]},
       distance: '7+'}).then(function(cursor) {
@@ -99,6 +102,7 @@ module.exports = {
     // D Packages (2 best)
     // 3rd/4th down, 4-7
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       down: {$in: [3, 4]},
       distance: '4-7'}).then(function(cursor) {
       return qCursorResults('D', cursor);
@@ -107,6 +111,7 @@ module.exports = {
     // E Packages (2 best)
     // 3rd down, 0 - 4
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       down: 3,
       distance: {$in: ['0-2', '2-4']}}).then(function(cursor) {
       return qCursorResults('E', cursor);
@@ -115,6 +120,7 @@ module.exports = {
     // F Package (2 best?)
     // 4th down, 0 - 2 yards (sometimes 2-4 yards)
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       down: 4,
       distance: {$in: ['0-2', '2-4']}}).then(function(cursor) {
       return qCursorResults('F', cursor);
@@ -122,6 +128,7 @@ module.exports = {
 
     // 1st, 2nd down at Goalline 0 - 5 (3 best?) (really 0 - 4?)
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       zone: 'redzone',
       down: {$in: [1, 2]},
       distance: {$in: ['0-2', '2-4']}}).then(function(cursor) {
@@ -130,6 +137,7 @@ module.exports = {
 
     // 1st, 2nd down at Goalline 5 - 10 (3 best?) (really 4-10)
     workQ.push(Q.ninvoke(gamePlan, 'find', {
+      teamId: defensiveTeamId,
       zone: 'redzone',
       down: {$in: [1, 2]},
       distance: {$in: ['4-7', '7+']}}).then(function(cursor) {
@@ -162,6 +170,9 @@ function offAiMapper() {
     distance: "normal",
     zone: "normal" // redzone, trapped avoiding a safety
   };
+  if (this.down < 3) {
+    key.down = 1;
+  }
   this.players.forEach(function(player) {
     if (player.position == 'QB') {
       switch (player.archetype) {
@@ -183,10 +194,10 @@ function offAiMapper() {
           key.HB = "Power";
           break;
         case 'Scat Back':
-          key.HB = "Receiver";
+          key.HB = "Catcher";
           break;
         case 'Elusive Back':
-          key.HB = "Receiver";
+          key.HB = "Rusher";
           break;
         default:
           key.HB = player.archetype;
@@ -201,7 +212,7 @@ function offAiMapper() {
           key.FB = "Rusher";
           break;
         case 'Scat Back':
-          key.FB = "Receiver";
+          key.FB = "Catcher";
           break;
         default:
           key.FB = player.archetype;
@@ -210,25 +221,21 @@ function offAiMapper() {
       switch (player.archetype) {
         case 'Blocker':
         case 'Special Teamer':
-          key.TE = "Blocker";
+          if (key.TE) {
+            key.BTE = "Blocker";
+          } else {
+            key.TE = "Blocker";
+          }
           break;
         case 'Receiver':
-          key.TE = "Receiver";
+          if (key.TE) {
+            key.BTE = "Catcher";
+          } else {
+            key.TE = "Catcher";
+          }
           break;
         default:
           key.TE = player.archetype;
-      }
-    } else if (player.position == 'BTE') {
-      switch (player.archetype) {
-        case 'Blocker':
-        case 'Special Teamer':
-          key.BTE = "Blocker";
-          break;
-        case 'Receiver':
-          key.BTE = "Receiver";
-          break;
-        default:
-          key.BTE = player.archetype;
       }
     }
   });
