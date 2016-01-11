@@ -64,16 +64,23 @@ module.exports = {
 
     function qCursorResults(key, cursor) {
       var d = Q.defer();
-      Q.ninvoke(cursor, "toArray").then(function(docs) {
+
+      function processRecords(docs) {
         _.forEach(docs, function(doc) {
           delete doc._id;
         });
         docs.sort(sortByYards);
         analysis[key] = docs;
         d.resolve(key);
-      }).catch(function(e) {
-        d.reject(e);
-      });
+      }
+
+      if (cursor instanceof Array) {
+        processRecords(cursor);
+      } else {
+        Q.ninvoke(cursor, "toArray").then(processRecords).catch(function(e) {
+          d.reject(e);
+        });
+      }
       return d.promise;
     }
 
@@ -82,65 +89,130 @@ module.exports = {
     // 2nd down, 0 - 4
     // 2nd down, 4 - 7
     // 2nd down, 7 - 99+
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    /*
+     workQ.push(Q.ninvoke(gamePlan, 'find', {
+     teamId: defensiveTeamId,
+     zone: 'normal',
+     down: {$in: [1, 2]}}).then(function(cursor) {
+     return qCursorResults('AB', cursor);
+     }));
+     */
+    var finalProjection = {$project: {
+      _id: 0,
+      formation: "$_id.formation",
+      down: "$_id.down",
+      distance: "$_id.distance",
+      QB: "$_id.QB",
+      HB: "$_id.HB",
+      FB: "$_id.FB",
+      TE: "$_id.TE",
+      BTE: "$_id.BTE",
+      plays: "$plays",
+      yards: {
+        loss: "$loss",
+        bad: "$bad",
+        normal: "$normal",
+        good: "$good",
+        great: "$great",
+        awesome: "$awesome"
+      }
+    }};
+
+    function playGrouping(down, distance) {
+      var id = {
+        formation: "$formation",
+        down: "$down",
+        distance: "$distance",
+        QB: "$QB",
+        HB: "$HB",
+        FB: "$FB",
+        TE: "$TE",
+        BTE: "$BTE"
+      };
+      if (down) {
+        id.down = {$literal: down};
+      }
+      if (distance) {
+        id.distance = {$literal: distance};
+      }
+      return {$group: {
+        _id: id,
+        plays: {$addToSet: "$plays"},
+        loss: {$sum: "$yards.loss"},
+        bad: {$sum: "$yards.bad"},
+        normal: {$sum: "$yards.normal"},
+        good: {$sum: "$yards.good"},
+        great: {$sum: "$yards.great"},
+        awesome: {$sum: "$yards.awesome"}
+      }};
+    }
+
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       zone: 'normal',
-      down: {$in: [1, 2]}}).then(function(cursor) {
+      down: {$in: [1, 2]}
+    }}, {$unwind: "$plays"}, playGrouping("1/2", "10"), finalProjection).then(function(cursor) {
       return qCursorResults('AB', cursor);
     }));
 
     // C Packages (5 best)
     // 3rd/4th down, 7 = 99+
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       zone: 'normal',
       down: {$in: [3, 4]},
-      distance: '7+'}).then(function(cursor) {
+      distance: '7+'
+    }}, {$unwind: "$plays"}, playGrouping("3/4", "7+"), finalProjection).then(function(cursor) {
       return qCursorResults('C', cursor);
     }));
 
     // D Packages (2 best)
     // 3rd/4th down, 4-7
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       down: {$in: [3, 4]},
-      distance: '4-7'}).then(function(cursor) {
+      distance: '4-7'
+    }}, {$unwind: "$plays"}, playGrouping("3/4", "4-7"), finalProjection).then(function(cursor) {
       return qCursorResults('D', cursor);
     }));
 
     // E Packages (2 best)
     // 3rd down, 0 - 4
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       down: 3,
-      distance: {$in: ['0-2', '2-4']}}).then(function(cursor) {
+      distance: {$in: ['0-2', '2-4']}
+    }}, {$unwind: "$plays"}, playGrouping(3, "0-4"), finalProjection).then(function(cursor) {
       return qCursorResults('E', cursor);
     }));
 
     // F Package (2 best?)
     // 4th down, 0 - 2 yards (sometimes 2-4 yards)
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       down: 4,
-      distance: {$in: ['0-2', '2-4']}}).then(function(cursor) {
+      distance: {$in: ['0-2', '2-4']}
+    }}, {$unwind: "$plays"}, playGrouping(4, "0-4"), finalProjection).then(function(cursor) {
       return qCursorResults('F', cursor);
     }));
 
     // 1st, 2nd down at Goalline 0 - 5 (3 best?) (really 0 - 4?)
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       zone: 'redzone',
       down: {$in: [1, 2]},
-      distance: {$in: ['0-2', '2-4']}}).then(function(cursor) {
+      distance: {$in: ['0-2', '2-4']}
+    }}, {$unwind: "$plays"}, playGrouping("1/2", "0-4"), finalProjection).then(function(cursor) {
       return qCursorResults('G', cursor);
     }));
 
     // 1st, 2nd down at Goalline 5 - 10 (3 best?) (really 4-10)
-    workQ.push(Q.ninvoke(gamePlan, 'find', {
+    workQ.push(Q.ninvoke(gamePlan, 'aggregate', {$match: {
       teamId: defensiveTeamId,
       zone: 'redzone',
       down: {$in: [1, 2]},
-      distance: {$in: ['4-7', '7+']}}).then(function(cursor) {
+      distance: {$in: ['4-7', '7+']}
+    }}, {$unwind: "$plays"}, playGrouping("1/2", "4+"), finalProjection).then(function(cursor) {
       return qCursorResults('H', cursor);
     }));
 

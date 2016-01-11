@@ -40,12 +40,13 @@ var me = module.exports = {
     },
     save: function(build) {
       var defer = Q.defer();
-      Database.db.collection('buildGuide').update({_id: build._id}, build, {upsert: true}, function(error, count, status) {
-        if (error) {
-          return defer.reject(error);
-        }
-        defer.resolve(build);
-      });
+      Database.db.collection('buildGuide')
+        .update({_id: build._id}, build, {upsert: true}, function(error, count, status) {
+          if (error) {
+            return defer.reject(error);
+          }
+          defer.resolve(build);
+        });
       return defer.promise;
     }
   },
@@ -110,10 +111,15 @@ var me = module.exports = {
       url: Config.glbUrl + '/replay.pl?game_id=' + gameId + '&pbp_id=' + replayId
     }).then(function(content) {
       var $ = Cheerio.load(content.toString());
-      var timeMatch = $('span#time_ytg').first().text().match(/(\d+):(\d+) (\d)\w{0,2} & (G|inches|[\-\.\d]+) on (?:(\w+) ([\-\.\d]+))?/);
+      var timeMatch = $('span#time_ytg')
+        .first()
+        .text()
+        .match(/(\d+):(\d+) (\d)\w{0,2} & (G|inches|[\-\.\d]+) on (?:(\w+) ([\-\.\d]+))?/);
       if (!timeMatch) {
         // Kickoff or Extra point attempt when no marker point exists
-        console.info("Unable to parse", gameId, replayId, $('span#time_ytg').first().text(), $('div.play#outcome_content').first().text());
+        console.info("Unable to parse", gameId, replayId, $('span#time_ytg')
+          .first()
+          .text(), $('div.play#outcome_content').first().text());
       }
       var distance = 0;
       if (timeMatch[4] == 'G') {
@@ -166,7 +172,12 @@ var me = module.exports = {
       Object.keys(playersInPlay).map(function(key) {
         var info = playersInPlay[key];
         var playerId = parseInt(key);
-        play.players.push({id: playerId, position: info.position, name: info.name, archetype: playerArchtypeCache[playerId]});
+        play.players.push({
+          id: playerId,
+          position: info.position,
+          name: info.name,
+          archetype: playerArchtypeCache[playerId]
+        });
       });
 
       match = scriptNode.match(/var play_data = (\[\[.+?\]\]);\s*/) || [null, '[]'];
@@ -188,15 +199,20 @@ var me = module.exports = {
         // TODO: Deflected passes should be treated as 0 yards, perhaps a new field for distance ball travelled to know if screens or what are happening
 
         play.defensivePlay = getDefensivePlayName($('div#defense_play_container').first().text(), play.players);
-        play.offensivePlay = getOffensivePlayName($("div#play_container").first().text().trim().replace(/Offense Play:/, ''), play.formation);
+        play.offensivePlay = getOffensivePlayName($("div#play_container")
+          .first()
+          .text()
+          .trim()
+          .replace(/Offense Play:/, ''), play.formation);
       }
 
-      Database.db.collection('play').update({gameId: gameId, replayId: replayId}, {$set: play}, {upsert: true}, function(error, result) {
-        if (error) {
-          return defer.reject("Unable to save replay", gameId, replayId, error);
-        }
-        defer.resolve(play);
-      });
+      Database.db.collection('play')
+        .update({gameId: gameId, replayId: replayId}, {$set: play}, {upsert: true}, function(error, result) {
+          if (error) {
+            return defer.reject("Unable to save replay", gameId, replayId, error);
+          }
+          defer.resolve(play);
+        });
     }).catch(function(error) {
       console.error("Failure to parse replay", error, "game", gameId, "replay", replayId);
       defer.reject(error);
@@ -229,19 +245,20 @@ var me = module.exports = {
           level: parseInt($(element).find("td.player_level").first().text())
         };
 
-        Database.db.collection('player').update({_id: player._id}, {$set: player}, {upsert: true}, function(error, result) {
-          if (error) {
-            return console.error("Error when updating player", player._id, error);
-          }
-          playerArchtypeCache[player._id] = player.archetype;
-        });
+        Database.db.collection('player')
+          .update({_id: player._id}, {$set: player}, {upsert: true}, function(error, result) {
+            if (error) {
+              return console.error("Error when updating player", player._id, error);
+            }
+            playerArchtypeCache[player._id] = player.archetype;
+          });
         team.players.push(new DBRef("player", player._id));
       });
 
       return team;
     }
 
-    request("team" + teamId, { url: Config.glbUrl + '/roster.pl?team_id=' + teamId }).then(function(content) {
+    request("team" + teamId, {url: Config.glbUrl + '/roster.pl?team_id=' + teamId}).then(function(content) {
       var team = parseTeamPage(content);
 
       Database.db.collection('team').update({_id: team._id}, {$set: team}, {upsert: true}, function(error, result) {
@@ -250,6 +267,8 @@ var me = module.exports = {
         }
         return defer.resolve(team);
       });
+    }).catch(function(e) {
+      return defer.reject("Unable to load team", teamId, e);
     });
     return defer.promise;
   }
@@ -296,7 +315,7 @@ function getDefensivePlayName(playName, players) {
 }
 
 function determineFormation(initialPlayData, players) {
-  var playerCounts = { qb: [], hb: [], fb: [], te: [], wr: [] };
+  var playerCounts = {qb: [], hb: [], fb: [], te: [], wr: []};
   var playData = {};
 
   initialPlayData.forEach(function(playPlayer) {
@@ -385,6 +404,9 @@ function determineFormation(initialPlayData, players) {
 
 function login() {
   var defer = Q.defer();
+  if (activeAccount) {
+    return Q(activeAccount);
+  }
   var configCollection = Database.db.collection('config');
   configCollection.findOne({_id: 'account'}, function(error, account) {
     if (error) {
@@ -395,12 +417,14 @@ function login() {
 
     if ((+account.expiration || 0) < +Date.now()) {
       console.info("Logging in with ", account);
-      Request.post({url: Config.glbUrl + '/login.pl', jar: cookieJar, form: {
-        user_name: account.username, password: account.password,
-        action: 'Submit',
-        x: Utils.randomInt(25, 40),
-        y: Utils.randomInt(35, 50)
-      }}, function(error, response, body) {
+      Request.post({
+        url: Config.glbUrl + '/login.pl', jar: cookieJar, form: {
+          user_name: account.username, password: account.password,
+          action: 'Submit',
+          x: Utils.randomInt(25, 40),
+          y: Utils.randomInt(35, 50)
+        }
+      }, function(error, response, body) {
         if (response.statusCode != 200) {
           return defer.reject("Unexpected status code on login. Terminating until fixed");
         }
@@ -431,41 +455,40 @@ function login() {
 }
 
 function request(cacheId, options, timeout) {
-  var defer = Q.defer();
-  if (options.jar === undefined) {
-    options.jar = cookieJar;
-  }
-  Q.nfcall(FS.readFile, 'server/cache/' + cacheId + ".html").then(function(contents) {
-    return defer.resolve(contents);
-  }).catch(function() {
-    Request(options, function(error, response, body) {
-      if (response.statusCode >= 400) {
-        return defer.reject(response.statusCode);
-      } else if (body.match(/window.location.replace\("\/game\/login.pl/)) {
-        Database.db.collection('config').update({_id: 'account'}, {'$unset': {expiration: 1, cookies: 1}}, function(error) {
-          if (error) {
-            console.error("Unable to clear account status", error);
-            return defer.reject(401);
-          }
+  return Q.nfcall(FS.readFile, 'server/cache/' + cacheId + ".html").catch(function() {
+    console.info("Failure to read cache, retrieving", cacheId);
 
-          login().then(function(account) { // try it again now that you have logged in again
-            request(options, timeout).then(function(content) {
-              defer.resolve(content);
-            }).catch(function(code) {
-              defer.reject(code);
-            });
-          }).catch(function(error) {
-            defer.reject(error);
-          });
-        });
-      } else {
-        Q.nfcall(FS.writeFile, 'server/cache/' + cacheId + '.html', body); // don't care if it succeeds or fails
-        defer.resolve(body);
+    return me.login().then(function(account) {
+      var defer = Q.defer();
+      console.info("Logged in with account ", account);
+      if (options.jar === undefined) {
+        options.jar = cookieJar;
       }
+
+      Request(options, function(error, response, body) {
+        if (response.statusCode >= 400) {
+          return defer.reject(response.statusCode);
+        } else if (body.match(/window.location.replace\("\/game\/login.pl/)) {
+          console.info("Session expired, forcing re-login!");
+          Database.db.collection('config').update({_id: 'account'}, {
+            '$unset': {expiration: 1, cookies: 1}
+          }, function(error) {
+            if (error) {
+              console.error("Unable to clear account status", error);
+              return defer.reject(401);
+            }
+
+            return defer.resolve(request(cacheId, options, timeout));
+          });
+        } else {
+          Q.nfcall(FS.writeFile, 'server/cache/' + cacheId + '.html', body); // don't care if it succeeds or fails
+          return defer.resolve(body);
+        }
+      });
+
+      return defer.promise;
     });
   });
-
-  return defer.promise;
 }
 
 function errorLogger(error) {

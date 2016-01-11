@@ -1,5 +1,8 @@
-<div>
-  Home Page. Todo, do something
-
-  <div>Goto: /oai/:teamid for analytics</div>
+<div class="container">
+  <div ng-if="teamId > 0">
+    <a href class="btn btn-default" ng-href="/api/team/{{teamId}}">
+      <div><i class="fa fa-5x fa-plus"></i></div>
+      <div>Load Team Data</div>
+    </a>
+  </div>
 </div>
