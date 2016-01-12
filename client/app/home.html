@@ -1,8 +1,19 @@
 <div class="container">
-  <div ng-if="teamId > 0">
-    <a href class="btn btn-default" ng-href="/api/team/{{teamId}}">
-      <div><i class="fa fa-5x fa-plus"></i></div>
-      <div>Load Team Data</div>
-    </a>
+  <div class="form-group input-group">
+    <span class="input-group-addon">Team Id</span>
+    <input type="text" class="form-control" placeholder="Team Id" ng-model="teamId">
+
+    <div class="input-group-btn">
+      <a href class="btn btn-default" ng-href="/api/team/{{teamId}}"><i class="fa fa-plus"></i> Team</a>
+      <a href class="btn btn-default" ng-href="#/oai/{{teamId}}"><i class="fa fa-check"></i> OAI</a>
+    </div>
+  </div>
+
+  <div class="form-group input-group">
+    <span class="input-group-addon">Game Id</span>
+    <input type="text" class="form-control" placeholder="Game Id" ng-model="gameId">
+    <div class="input-group-btn">
+      <a href class="btn btn-default" ng-href="/api/game/{{gameId}}"><i class="fa fa-plus"></i> Game</a>
+    </div>
   </div>
 </div>

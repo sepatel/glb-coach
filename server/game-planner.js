@@ -38,7 +38,7 @@ module.exports = {
           });
           inserts.push(def);
         });
-        Q.all(inserts).then(function() {
+        Q.allSettled(inserts).then(function() {
           return defer.resolve(records);
         }).catch(function(errors) {
           return defer.reject(errors);

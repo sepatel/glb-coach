@@ -30,7 +30,7 @@ module.exports = function(app) {
   });
 
   router.post('/offense/ai', function(req, res) {
-    var opponentId = req.body.teamId;
+    var opponentId = +req.body.teamId;
     var gameIds = req.body.gameIds;
     GamePlanner.gamePlanOffAiFact(opponentId, gameIds).then(function(facts) {
       respond(res, GamePlanner.gamePlanOffAiStats(opponentId));

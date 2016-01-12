@@ -13,7 +13,8 @@
       rest.$get('/api/team/' + teamId).then(function(team) {
         $scope.team = team;
       });
-      rest.$get('/api/offense/ai/' + teamId).then(function(gamePlan) {
+      rest.$post('/api/offense/ai', {teamId: teamId}).then(function(gamePlan) {
+        console.info("Game Plan", gamePlan);
         angular.forEach(gamePlan, function(stats, group) {
           stats.sort(function(a, b) {
             if (a.formation > b.formation) {
