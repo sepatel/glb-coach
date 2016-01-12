@@ -2,6 +2,7 @@ var FS = require('fs');
 var Q = require('q');
 var Cheerio = require('cheerio');
 var _ = require('underscore');
+var Zlib = require('zlib');
 
 var Database = require('./database');
 var DBRef = require('mongodb').DBRef;
@@ -425,6 +426,9 @@ function login() {
           y: Utils.randomInt(35, 50)
         }
       }, function(error, response, body) {
+        if (error) {
+          defer.reject(error);
+        }
         if (response.statusCode != 200) {
           return defer.reject("Unexpected status code on login. Terminating until fixed");
         }
@@ -455,7 +459,9 @@ function login() {
 }
 
 function request(cacheId, options, timeout) {
-  return Q.nfcall(FS.readFile, 'server/cache/' + cacheId + ".html").catch(function() {
+  return Q.nfcall(FS.readFile, 'server/cache/' + cacheId + ".html.gz").then(function(body) {
+    return Q.ninvoke(Zlib, 'gunzip', body);
+  }).catch(function(e) {
     console.info("Failure to read cache, retrieving", cacheId);
 
     return me.login().then(function(account) {
@@ -481,8 +487,15 @@ function request(cacheId, options, timeout) {
             return defer.resolve(request(cacheId, options, timeout));
           });
         } else {
-          Q.nfcall(FS.writeFile, 'server/cache/' + cacheId + '.html', body); // don't care if it succeeds or fails
-          return defer.resolve(body);
+          Q.ninvoke(Zlib, 'gzip', body).then(function(buffer) {
+            Q.nfcall(FS.writeFile, 'server/cache/' + cacheId + '.html.gz', buffer).then(function() {
+              return defer.resolve(body);
+            }).catch(function(e) {
+              return defer.reject(e);
+            }); // don't care if it succeeds or fails
+          }).catch(function(e) {
+            return defer.reject(e);
+          });
         }
       });
 

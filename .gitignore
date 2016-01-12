@@ -35,4 +35,4 @@ bower_components
 # Compiled artifacts
 client/css
 client/js
-server/cache/*.html
+server/cache/
