@@ -25,17 +25,31 @@ module.exports = function(app) {
     respond(res, DataFetcher.build.save(req.body));
   });
 
+  /*
   router.get('/offense/ai/:teamId', function(req, res) {
     respond(res, GamePlanner.gamePlanOffAiStats(parseInt(req.params.teamId)));
   });
+  */
 
-  router.post('/offense/ai', function(req, res) {
+  router.post('/offense/ai/gameplan', function(req, res) {
     var opponentId = +req.body.teamId;
     var gameIds = req.body.gameIds;
     GamePlanner.gamePlanOffAiFact(opponentId, gameIds).then(function(facts) {
       respond(res, GamePlanner.gamePlanOffAiStats(opponentId));
     }).catch(function(error) {
-      console.info("Error", error);
+      console.info("Error", error.stack);
+      res.status(500);
+      res.send({error: error});
+    });
+  });
+
+  router.post('/offense/ai/formation', function(req, res) {
+    var opponentId = +req.body.teamId;
+    var gameIds = req.body.gameIds;
+    GamePlanner.gamePlanOffAiFact(opponentId, gameIds).then(function(facts) {
+      respond(res, GamePlanner.gamePlanOffAiFormation(opponentId));
+    }).catch(function(error) {
+      console.info("Error", error.stack);
       res.status(500);
       res.send({error: error});
     });

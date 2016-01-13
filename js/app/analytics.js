@@ -1,7 +1,7 @@
 (function(angular) {
   var module = angular.module('app.analytics', ['ssNotify', 'util.rest']);
 
-  module.controller('AnalyticsCtrl', function($scope, $http, $routeParams, $window, NotifyService, RestService) {
+  module.controller('AnalyticsCtrl', function($scope, $routeParams, $window, NotifyService, RestService) {
     var teamId = $routeParams.teamId;
     var rest = new RestService("Analytics");
 
@@ -13,7 +13,53 @@
       rest.$get('/api/team/' + teamId).then(function(team) {
         $scope.team = team;
       });
-      rest.$post('/api/offense/ai', {teamId: teamId}).then(function(gamePlan) {
+
+      rest.$post('/api/offense/ai/formation', {teamId: teamId}).then(function(analytics) {
+        console.info("Analytics", analytics);
+        angular.forEach(analytics, function(analyticsList, group) {
+          angular.forEach(analyticsList, function(a) {
+            a.$$score = a.loss * -2 + a.bad * -1 + a.normal + a.good * 1.5 + a.great * 2 + a.awesome * 3;
+
+            if (a.$$score > 10) {
+              a.$$scoreType = "panel-primary";
+            } else if (a.$$score > 3) {
+              a.$$scoreType = "panel-success";
+            } else if (a.$$score > 1) {
+              a.$$scoreType = "panel-secondary";
+            } else if (a.$$score < 1) {
+              a.$$scoreType = "panel-warning";
+            } else if (a.$$score < -3) {
+              a.$$scoreType = "panel-danger";
+            } else {
+              a.$$scoreType = "panel-default";
+            }
+          });
+
+          analyticsList.sort(function(a, b) {
+            return b.$$score - a.$$score;
+          });
+        });
+
+        $scope.analytics = analytics;
+      });
+    }
+
+    initialize();
+  });
+
+  module.controller('GamePlanCtrl', function($scope, $routeParams, $window, NotifyService, RestService) {
+    var teamId = $routeParams.teamId;
+    var rest = new RestService("Game Planner");
+
+    $scope.viewReplay = function(play) {
+      $window.open('http://glb.warriorgeneral.com/game/replay.pl?game_id=' + play.gameId + '&pbp_id=' + play.replayId, "research");
+    };
+
+    function initialize() {
+      rest.$get('/api/team/' + teamId).then(function(team) {
+        $scope.team = team;
+      });
+      rest.$post('/api/offense/ai/gameplan', {teamId: teamId}).then(function(gamePlan) {
         console.info("Game Plan", gamePlan);
         angular.forEach(gamePlan, function(stats, group) {
           stats.sort(function(a, b) {

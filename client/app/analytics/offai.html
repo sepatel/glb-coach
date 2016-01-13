@@ -1,42 +1,26 @@
 <div>
   <h1>vs {{team.name}}'s Defense</h1>
 
-  <div ng-if="!gamePlan"><i class="fa fa-spinner fa-spin fa-5x"></i></div>
+  <div ng-if="!analytics"><i class="fa fa-spinner fa-spin fa-5x"></i></div>
 
   <div accordion="">
-    <div accordion-group="" ng-repeat="(key, stats) in gamePlan">
+    <div accordion-group="" ng-repeat="(formation, analyticList) in analytics">
       <div accordion-heading="">
-        <div ng-switch="key">
-          <div ng-switch-when="AB">A/B 1st/2nd (~10 best of {{stats.length}})</div>
-          <div ng-switch-when="C">C 3rd/4th 7+ (~5 best of {{stats.length}})</div>
-          <div ng-switch-when="D">D 3rd/4th 4-7 (~2 best of {{stats.length}})</div>
-          <div ng-switch-when="E">E 3rd/4th 0-4 (~2 best of {{stats.length}})</div>
-          <div ng-switch-when="F">F 4th 0-2 (~2 best of {{stats.length}})</div>
-          <div ng-switch-when="G">G 1st/2nd Goal 0-4 (~3 best of {{stats.length}})</div>
-          <div ng-switch-when="H">H 1st/2nd Goal 4-10 (~3 best of {{stats.length}})</div>
-        </div>
+        <div>{{formation}}</div>
       </div>
-      <div ng-repeat="stat in stats" class="card card-h1 card-w1">
-        <div class="panel" ng-class="stat.$$score">
+      <div ng-repeat="analytic in analyticList" class="card card-h1 card-w1">
+        <div class="panel" ng-class="analytic.$$scoreType">
           <div class="panel-heading">
             <h2 class="panel-title">
-              {{stat.formation}}
-              <small>
-                <span ng-if="stat.QB == 'Rusher'">rQB</span>
-                <span ng-if="stat.QB != 'Rusher' && stat.QB != 'Passer'">?QB</span>
-                <span ng-if="stat.HB == 'Catcher'">cHB</span>
-                <span ng-if="stat.HB == 'Power'">pHB</span>
-                <span ng-if="stat.FB == 'Blocker'">bFB</span>
-                <span ng-if="stat.FB == 'Catcher'">cFB</span>
-                <span ng-if="stat.FB == 'Rusher'">rFB</span>
-                <span ng-if="stat.TE == 'Blocker'">bTE</span>
-                <span ng-if="stat.TE == 'Catcher'">cTE</span>
-                <span ng-if="stat.BTE == 'Blocker'">bBTE</span>
-                <span ng-if="stat.BTE == 'Catcher'">cBTE</span>
+              {{analytic._id.name}}
+              <small ng-switch="analytic._id.type">
+                <span ng-switch-when="Run_Inside">(inside)</span>
+                <span ng-switch-when="Run_Tackle">(tackle)</span>
+                <span ng-switch-when="Run_Outside">(outside)</span>
+                <span ng-switch-when="Run_Counter">(counter)</span>
+                <span ng-switch-when="Pass_Screen">(screen)</span>
               </small>
-              <small class="pull-right">
-                {{stat.down}} & {{stat.distance}}
-              </small>
+              <small class="pull-right">{{analytic.$$score}}</small>
             </h2>
           </div>
           <div class="panel-body">
@@ -44,23 +28,26 @@
               <thead>
               <tr>
                 <th>D & D</th>
-                <th>Name</th>
-                <th>Yards</th>
+                <th>Yds</th>
+                <th>QB</th>
+                <th ng-if="analytic.plays[0].HB">HB</th>
+                <th ng-if="analytic.plays[0].FB">FB</th>
+                <th ng-if="analytic.plays[0].TE">TE</th>
+                <th ng-if="analytic.plays[0].BTE">BTE</th>
+                <th>Defense</th>
               </tr>
               </thead>
               <tbody>
-              <tr ng-repeat="play in stat.plays" style="cursor: pointer;"
-                  tooltip="{{play.outcome}}" ng-click="viewReplay(play)">
-                <td>{{play.down}} & {{play.distance}}</td>
-                <td ng-switch="play.type.type">
-                  {{play.type.name}}
-                  <span ng-switch-when="Run_Inside">(inside)</span>
-                  <span ng-switch-when="Run_Tackle">(tackle)</span>
-                  <span ng-switch-when="Run_Outside">(outside)</span>
-                  <span ng-switch-when="Run_Counter">(counter)</span>
-                  <span ng-switch-when="Pass_Screen">(screen)</span>
-                </td>
+              <tr ng-repeat="play in analytic.plays" style="cursor: pointer;" tooltip="{{play.outcome}}"
+                  ng-click="viewReplay(play)">
+                <td class="text-nowrap">{{play.down}} & {{play.distance}}</td>
                 <td>{{play.yards|number:2}}</td>
+                <td>{{play.QB}}</td>
+                <td ng-if="play.HB">{{play.HB}}</td>
+                <td ng-if="play.FB">{{play.FB}}</td>
+                <td ng-if="play.TE">{{play.TE}}</td>
+                <td ng-if="play.BTE">{{play.BTE}}</td>
+                <td>{{play.defense}}</td>
               </tr>
               </tbody>
             </table>

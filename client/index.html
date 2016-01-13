@@ -10,7 +10,7 @@
 </head>
 
 <body>
-<nav class="navbar navbar-inverse navbar-fixed-top">
+<nav class="navbar navbar-inverse navbar-fixed-top" ng-controller="NavigationCtrl">
   <div class="navbar-header">
     <button type="button" class="navbar-toggle collapsed" ng-click="isTopExpanded = !isTopExpanded">
       <span class="icon-bar"></span>
@@ -29,8 +29,9 @@
         <input type="text" class="form-control" placeholder="Team Id" ng-model="teamId">
 
         <div class="input-group-btn">
-          <a href class="btn btn-default" ng-href="/api/team/{{teamId}}"><i class="fa fa-plus"></i></a>
+          <a href class="btn btn-default" ng-click="loadTeam(teamId)"><i class="fa fa-plus"></i></a>
           <a href class="btn btn-default" ng-href="#/oai/{{teamId}}"><i class="fa fa-check"></i> OAI</a>
+          <a href class="btn btn-default" ng-href="#/gamePlan/{{teamId}}"><i class="fa fa-check"></i> Game Plan</a>
         </div>
       </div>
     </form>
@@ -40,7 +41,7 @@
         <input type="text" class="form-control" placeholder="Game Id" ng-model="gameId">
 
         <div class="input-group-btn">
-          <a href class="btn btn-default" ng-href="/api/game/{{gameId}}"><i class="fa fa-plus"></i></a>
+          <a href class="btn btn-default" ng-click="loadGame(gameId)"><i class="fa fa-plus"></i></a>
         </div>
       </div>
     </form>
