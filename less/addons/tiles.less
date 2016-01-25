@@ -1,0 +1,55 @@
+@tile-width: 440px;
+@tile-height: 290px;
+
+.panel.tile {
+  border: 0px;
+  box-shadow: none;
+  page-break-inside: avoid;
+
+  &.tilew1 {
+    width: @tile-width;
+    flex: 2 @tile-width;
+  }
+  &.tilew2 {
+    width: (@tile-width * 2);
+    flex: 2 (@tile-width * 2);
+  }
+  &.tilew3 {
+    width: (@tile-width * 3);
+    flex: 2 (@tile-width * 3);
+  }
+
+  &.tileh1 {
+    height: @tile-height;
+    .panel-body {
+      height: (@tile-height - 55);
+    }
+  }
+  &.tileh2 {
+    height: ((@tile-height + 10) * 2);
+    .panel-body {
+      height: ((@tile-height + 10) * 2 - 55);
+    }
+  }
+
+  .panel-body {
+    overflow: auto;
+  }
+
+  &.panel-secondary > .panel-heading {
+    color: @brand-secondary;
+  }
+
+  .panel-heading {
+    border-width: 0 0 2px;
+    border-style: solid;
+    background-color: transparent;
+  }
+
+  .panel-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+

@@ -93,7 +93,8 @@ var me = module.exports = {
     }
 
     request("game" + gameId, {url: Config.glbUrl + '/game.pl?game_id=' + gameId + '&mode=pbp'}).then(function(content) {
-      parseGamePage(content).then(function(game) {
+      parseGamePage(content.body).then(function(game) {
+        game.created = content.created;
         Database.db.collection('game').update({_id: game._id}, {$set: game}, {upsert: true}, function(error, result) {
           if (error) {
             return defer.reject("Unable to save the game", game, error);
@@ -111,7 +112,7 @@ var me = module.exports = {
     request("replay" + gameId + "_" + replayId, {
       url: Config.glbUrl + '/replay.pl?game_id=' + gameId + '&pbp_id=' + replayId
     }).then(function(content) {
-      var $ = Cheerio.load(content.toString());
+      var $ = Cheerio.load(content.body.toString());
       var timeMatch = $('span#time_ytg')
         .first()
         .text()
@@ -260,7 +261,8 @@ var me = module.exports = {
     }
 
     request("team" + teamId, {url: Config.glbUrl + '/roster.pl?team_id=' + teamId}).then(function(content) {
-      var team = parseTeamPage(content);
+      var team = parseTeamPage(content.body);
+      team.created = content.created;
 
       Database.db.collection('team').update({_id: team._id}, {$set: team}, {upsert: true}, function(error, result) {
         if (error) {
@@ -460,9 +462,13 @@ function login() {
 
 function request(cacheId, options, timeout) {
   return Q.nfcall(FS.readFile, 'server/cache/' + cacheId + ".html.gz").then(function(body) {
-    return Q.ninvoke(Zlib, 'gunzip', body);
+    var stat = FS.statSync('server/cache/' + cacheId + '.html.gz');
+    // TODO: Check the timeout on the file to see if it needs to be purged
+    return Q.ninvoke(Zlib, 'gunzip', body).then(function(realBody) {
+      return {body: realBody, created: stat.mtime};
+    });
   }).catch(function(e) {
-    console.info("Failure to read cache, retrieving", cacheId);
+    console.info("Failure to read cache, retrieving", cacheId, e.stack);
 
     return me.login().then(function(account) {
       var defer = Q.defer();
@@ -489,7 +495,7 @@ function request(cacheId, options, timeout) {
         } else {
           Q.ninvoke(Zlib, 'gzip', body).then(function(buffer) {
             Q.nfcall(FS.writeFile, 'server/cache/' + cacheId + '.html.gz', buffer).then(function() {
-              return defer.resolve(body);
+              return defer.resolve({body: body, created: new Date()});
             }).catch(function(e) {
               return defer.reject(e);
             }); // don't care if it succeeds or fails

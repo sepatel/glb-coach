@@ -3,6 +3,17 @@
 
   var module = angular.module('app.system', ['ssNotify', 'ssStorage']);
 
+  module.filter('isEmpty', function() {
+    return function(obj) {
+      for (var bar in obj) {
+        if (obj.hasOwnProperty(bar)) {
+          return false;
+        }
+      }
+      return true;
+    };
+  });
+
   module.service('System', function($rootScope, $http, $log, $window, NotifyService, Storage) {
     var release = new Date(Storage.get('version') || 0);
     var forcedRefresh = Storage.get('_upgraded') || false;
@@ -20,7 +31,7 @@
           if (newVersion > release) {
             var prevVersion = release;
             $rootScope.release = release = newVersion;
-            $rootScope.$broadcast('versionUpgrade', { oldVersion: prevVersion, newVersion: newVersion });
+            $rootScope.$broadcast('versionUpgrade', {oldVersion: prevVersion, newVersion: newVersion});
 
             angular.forEach(+response.data.erase || [], function(key) {
               Storage.remove(key);

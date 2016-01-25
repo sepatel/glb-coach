@@ -22,11 +22,11 @@ module.exports = function(grunt) {
 
     concat: {
       sliqsolv: {
-        src: [ 'js/addons/**/*.js' ],
+        src: ['js/addons/**/*.js'],
         dest: 'client/js/<%= pkg.name %>.js'
       },
       app: {
-        src: [ 'js/app/**/*.js' ],
+        src: ['js/app/**/*.js'],
         dest: 'client/js/app.js'
       }
     },
@@ -39,7 +39,8 @@ module.exports = function(grunt) {
         src: [
           'bower_components/jquery/dist/jquery.js', 'bower_components/angular/angular.js',
           'bower_components/angular-animate/angular-animate.js', 'bower_components/angular-route/angular-route.js',
-          'bower_components/ui-utils/ui-utils.js', 'vendor/ui-bootstrap-tpls-0.12.0.js'
+          'bower_components/ui-utils/ui-utils.js', 'vendor/ui-bootstrap-tpls-0.12.0.js',
+          'bower_components/packery/dist/packery.pkgd.min.js'
         ],
         dest: 'client/js/vendor.min.js'
       }
@@ -95,10 +96,10 @@ module.exports = function(grunt) {
     },
 
     copy: {
-      css: { /* src: 'css/*', dest: 'dist/' */ },
-      js: { /* src: 'js/*', dest: 'dist/' */ },
-      html: { /* expand: true, cwd: 'client/', src: '** /*.html', dest: 'dist/' */ },
-      fonts: { /* src: 'fonts/*', dest: 'dist/' */ }
+      css: {/* src: 'css/*', dest: 'dist/' */},
+      js: {/* src: 'js/*', dest: 'dist/' */},
+      html: {/* expand: true, cwd: 'client/', src: '** /*.html', dest: 'dist/' */},
+      fonts: {/* src: 'fonts/*', dest: 'dist/' */}
     },
 
     watch: {
