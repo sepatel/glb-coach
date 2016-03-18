@@ -1,3 +1,11 @@
+db.config.update({_id: 'account'}, {
+  $set: {
+    "_id": "account",
+    "username": "bigdefense",
+    "password": "inigma"
+  }
+}, {upsert: true});
+
 db.playbook.drop();
 db.playbook.insert({_id: -1, "name": "QB Kneel", "formation": "Special", "type": "Other"});
 db.playbook.insert({_id: 1, "name": "HB Blast Weak", "formation": "I Form", "type": "Run_Inside"});

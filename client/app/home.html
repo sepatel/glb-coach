@@ -1,19 +1,42 @@
 <div class="container">
-  <div class="form-group input-group">
-    <span class="input-group-addon">Team Id</span>
-    <input type="text" class="form-control" placeholder="Team Id" ng-model="teamId">
+  <h2 class="text-center">GLB Control Panel</h2>
 
-    <div class="input-group-btn">
-      <a href class="btn btn-default" ng-href="/api/team/{{teamId}}"><i class="fa fa-plus"></i> Team</a>
-      <a href class="btn btn-default" ng-href="#/oai/{{teamId}}"><i class="fa fa-check"></i> OAI</a>
+  <div class="text-center">
+    <div class="ss-card animate" tooltip="Generate build guides down to the day level precision">
+      <div class="frame" ng-click="link('/build')">
+        <div class="body">
+          <div><img src="images/build-guide.png" style="width: 75px;"></div>
+          <div><strong>Build Guide</strong></div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group input-group">
-    <span class="input-group-addon">Game Id</span>
-    <input type="text" class="form-control" placeholder="Game Id" ng-model="gameId">
-    <div class="input-group-btn">
-      <a href class="btn btn-default" ng-href="/api/game/{{gameId}}"><i class="fa fa-plus"></i> Game</a>
+    <div class="ss-card animate" tooltip="Load data for teams and games">
+      <div class="frame">
+        <div class="body">
+          <div><img src="images/data-loader.png" style="width: 75px;"></div>
+          <div><strong>Data Loader</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ss-card animate" tooltip="Advanced Breakdown for Offensive AI situations">
+      <div class="frame">
+        <div class="body">
+          <div><img src="images/ai-book.png" style="width: 75px;"></div>
+          <div><strong>Game Planner</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ss-card animate" tooltip="Generic breakdown by playbook">
+      <div class="frame">
+        <div class="body">
+          <div><img src="images/trophy.png" style="width: 75px;"></div>
+          <div><strong>Offensive AI Generator</strong></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+

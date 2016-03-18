@@ -25,5 +25,11 @@
       });
     };
   });
+
+  module.run(function($rootScope, $location) {
+    $rootScope.link = function(path) {
+      $location.path(path);
+    }
+  });
 }(angular));
 

@@ -1,0 +1,96 @@
+@business-card-width: 294px;
+@business-card-height: 140px;
+
+.ss-card {
+  height: (@business-card-height - @padding-base-vertical);
+  width: (@business-card-width - @padding-base-horizontal);
+  display: inline-block;
+
+  &.notification {
+    .frame {
+      border-top: 4px solid @brand-primary;
+    }
+  }
+
+  .frame {
+    height: (@business-card-height - @padding-base-vertical * 2);
+    width: (@business-card-width - @padding-base-horizontal * 2);
+    margin: (@padding-base-vertical / 2) (@padding-base-horizontal / 2);
+    padding: @padding-base-vertical @padding-base-horizontal;
+    border: 1px solid @gray-light;
+    box-shadow: 2px 2px 2px @gray-light;
+    border-radius: 4px;
+    position: absolute;
+
+    &[ng-click] {
+      cursor: pointer;
+    }
+
+    .body {
+      //padding: @padding-sm-vertical @padding-sm-horizontal;
+      color: @text-color;
+      position: relative;
+      display: block;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      text-overflow: ellipsis;
+      text-align: center;
+      .translate(-50%, -50%);
+
+      div.inline {
+        display: inline-block;
+        vertical-align: middle;
+
+        .fa {
+          min-width: 20px;
+          text-align: center;
+        }
+        .ellipsis {
+          max-width: (@business-card-width - @padding-base-horizontal * 2 - 100);
+        }
+      }
+    }
+
+    .clickable {
+      display: none;
+    }
+    &:hover {
+      .clickable {
+        display: block;
+      }
+    }
+
+    .pull-top {
+      top: 0%;
+      left: 50%;
+      .translate(-50%, 0%);
+      &.pull-left, &.pull-right {
+        left: auto;
+        .translate(0%, 0%);
+      }
+      &.pull-left {
+        left: 1%;
+      }
+      &.pull-right {
+        right: 1%;
+      }
+    }
+    .pull-bottom {
+      bottom: 1%;
+      left: 50%;
+      .translate(-50%, 0%);
+      &.pull-left, &.pull-right {
+        left: auto;
+        .translate(0%, 0%);
+      }
+      &.pull-left {
+        left: 1%;
+      }
+      &.pull-right {
+        right: 1%;
+      }
+    }
+  }
+}
+

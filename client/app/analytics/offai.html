@@ -12,7 +12,7 @@
       <div tileable="" ng-model="$$isOpen">
         <div tile="" class="tilew2" type="{{analytic.$$scoreType}}" ng-repeat="analytic in analyticList">
           <div tile-heading="">
-            <small class="pull-right" style="margin-top: 8px;">{{analytic.$$score}}</small>
+            <small class="pull-right" style="margin-top: 8px;">{{analytic.$$score}} of {{analytic.plays.length}} ({{100 * analytic.$$score / analytic.plays.length | number:2}}%)</small>
             {{analytic._id.name}}
             <small ng-switch="analytic._id.type">
               <span ng-switch-when="Run_Inside">(inside)</span>

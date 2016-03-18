@@ -472,7 +472,7 @@ function request(cacheId, options, timeout) {
 
     return me.login().then(function(account) {
       var defer = Q.defer();
-      console.info("Logged in with account ", account);
+      //console.info("Logged in with account ", account);
       if (options.jar === undefined) {
         options.jar = cookieJar;
       }
