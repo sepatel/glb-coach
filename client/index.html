@@ -22,19 +22,8 @@
         <input type="text" class="form-control" placeholder="Team Id" ng-model="teamId">
 
         <div class="input-group-btn">
-          <a href class="btn btn-default" ng-click="loadTeam(teamId)"><i class="fa fa-plus"></i></a>
           <a href class="btn btn-default" ng-href="#/oai/{{teamId}}"><i class="fa fa-check"></i> OAI</a>
           <a href class="btn btn-default" ng-href="#/gamePlan/{{teamId}}"><i class="fa fa-check"></i> Game Plan</a>
-        </div>
-      </div>
-    </form>
-    <form class="navbar-form navbar-left pull-right">
-      <div class="input-group">
-        <span class="input-group-addon">Game Id</span>
-        <input type="text" class="form-control" placeholder="Game Id" ng-model="gameId">
-
-        <div class="input-group-btn">
-          <a href class="btn btn-default" ng-click="loadGame(gameId)"><i class="fa fa-plus"></i></a>
         </div>
       </div>
     </form>

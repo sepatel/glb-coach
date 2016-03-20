@@ -1,0 +1,45 @@
+<div class="container">
+  <h2 class="text-center">Data Loader</h2>
+
+  <div class="text-center">
+    <div class="ss-card animate">
+      <div class="frame">
+        <div class="body">
+          <div class="inline"><img src="images/team.png" style="width: 70px;"></div>
+          <div ng-if="form.teamLoading" class="inline"><i class="fa fa-spin fa-spinner fa-4x"></i></div>
+          <div ng-if="!form.teamLoading" class="inline">
+            <div class="ellipsis"><strong>Load Team</strong></div>
+            <form ng-submit="loadTeam()">
+              <div class="ellipsis input-group">
+                <input class="form-control" type="number" placeholder="team id" ng-model="form.teamId">
+                <span class="input-group-btn">
+                  <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i></button>
+                </span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ss-card animate">
+      <div class="frame">
+        <div class="body">
+          <div class="inline"><img src="images/football.png" style="width: 70px;"></div>
+          <div ng-if="form.gameLoading" class="inline"><i class="fa fa-spin fa-spinner fa-4x"></i></div>
+          <div ng-if="!form.gameLoading" class="inline">
+            <div class="ellipsis"><strong>Load Game</strong></div>
+            <form ng-submit="loadGame()">
+              <div class="ellipsis input-group">
+                <input class="form-control" type="number" placeholder="game id" ng-model="form.gameId">
+                <span class="input-group-btn">
+                  <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i></button>
+                </span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

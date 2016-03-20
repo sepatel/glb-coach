@@ -12,7 +12,7 @@
     </div>
 
     <div class="ss-card animate" tooltip="Load data for teams and games">
-      <div class="frame">
+      <div class="frame" ng-click="link('/dataLoader')">
         <div class="body">
           <div><img src="images/data-loader.png" style="width: 75px;"></div>
           <div><strong>Data Loader</strong></div>
@@ -34,6 +34,15 @@
         <div class="body">
           <div><img src="images/trophy.png" style="width: 75px;"></div>
           <div><strong>Offensive AI Generator</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ss-card animate" tooltip="View UI Theme Page">
+      <div class="frame" ng-click="link('/theme')">
+        <div class="body">
+          <div><img src="images/themes-icon.png" style="width: 75px;"></div>
+          <div><strong>View Theme</strong></div>
         </div>
       </div>
     </div>
