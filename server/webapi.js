@@ -5,7 +5,10 @@ module.exports = function(app) {
   var router = app.Router();
 
   router.get('/team/:teamId', function(req, res) {
-    respond(res, DataFetcher.getTeam(req.params.teamId));
+    respond(res, DataFetcher.team.get(req.params.teamId));
+  });
+  router.get('/teams', function(req, res) {
+    respond(res, DataFetcher.team.getAll());
   });
 
   router.get('/game/:gameId', function(req, res) {

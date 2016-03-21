@@ -20,14 +20,7 @@ var me = module.exports = {
   login: login,
   build: {
     get: function() {
-      var defer = Q.defer();
-      Database.db.collection('buildGuide').find().toArray(function(err, docs) {
-        if (err) {
-          return defer.reject(err);
-        }
-        defer.resolve(docs);
-      });
-      return defer.promise;
+      return Database.find('buildGuide');
     },
     remove: function(buildId) {
       var defer = Q.defer();
@@ -51,6 +44,77 @@ var me = module.exports = {
       return defer.promise;
     }
   },
+  team: {
+    get: function(teamId) {
+      var defer = Q.defer();
+
+      function parseTeamPage(body) {
+        var $ = Cheerio.load(body);
+        var team = {
+          _id: parseInt(teamId),
+          name: $('div.big_head.subhead_head').text().replace(/\r|\n.*/gm, ''),
+          players: []
+        };
+        // TODO: Parse the team roster out and store it in mongo
+        $('div#content_attrib table.players tr').each(function(index, element) {
+          var href = $(element).find("td.player_name a").first().attr('href');
+          if (href == null) {
+            return;
+          }
+          // TODO: td.player_dc is the players attributes in order of str, spd, agi, jmp, sta, vis, con, blk, tak, thw, cat, cry, kck, pnt
+          var player = {
+            _id: parseInt(href.substring(href.indexOf('=') + 1)),
+            name: $(element).find("td.player_name a").text(),
+            archetype: determineArchetype($(element).find("td.player_archetype img").first().attr('onmouseover')),
+            position: $(element).find("td.player_position .position").text(),
+            level: parseInt($(element).find("td.player_level").first().text())
+          };
+
+          Database.db.collection('player')
+            .update({_id: player._id}, {$set: player}, {upsert: true}, function(error, result) {
+              if (error) {
+                return console.error("Error when updating player", player._id, error);
+              }
+              playerArchtypeCache[player._id] = player.archetype;
+            });
+          team.players.push(new DBRef("player", player._id));
+        });
+
+        return team;
+      }
+
+      request("team" + teamId, {url: Config.glbUrl + '/roster.pl?team_id=' + teamId}).then(function(content) {
+        var team = parseTeamPage(content.body);
+        team.created = content.created;
+
+        Database.db.collection('team').update({_id: team._id}, {$set: team}, {upsert: true}, function(error, result) {
+          if (error) {
+            return defer.reject("Unable to save the team", team, error);
+          }
+          return defer.resolve(team);
+        });
+      }).catch(function(e) {
+        return defer.reject("Unable to load team", teamId, e);
+      });
+      return defer.promise;
+    },
+    getAll: function() {
+      return Database.find('team').then(function(teams) {
+        teams.forEach(function(team) {
+          Database.fromMongo(team);
+        });
+        teams.sort(function(a, b) {
+          if (a.name > b.name) {
+            return 1;
+          } else if (a.name < b.name) {
+            return -1;
+          }
+          return 0;
+        });
+        return teams;
+      });
+    }
+  },
   getGame: function(gameId) {
     var defer = Q.defer();
 
@@ -69,10 +133,10 @@ var me = module.exports = {
       var teamLogos = $('div#scoreboard > div.team_logo > img');
       var first = teamLogos.first().attr('src');
       var last = teamLogos.last().attr('src');
-      allPromises.push(me.getTeam(parseInt(first.substring(first.indexOf('=') + 1))).then(function(team) {
+      allPromises.push(me.team.get(parseInt(first.substring(first.indexOf('=') + 1))).then(function(team) {
         game.team.home = new DBRef("team", team._id);
       }).catch(errorLogger));
-      allPromises.push(me.getTeam(parseInt(last.substring(last.indexOf('=') + 1))).then(function(team) {
+      allPromises.push(me.team.get(parseInt(last.substring(last.indexOf('=') + 1))).then(function(team) {
         game.team.away = new DBRef("team", team._id);
       }).catch(errorLogger));
 
@@ -222,59 +286,6 @@ var me = module.exports = {
 
     return defer.promise.timeout(30000);
   },
-  getTeam: function(teamId) {
-    var defer = Q.defer();
-
-    function parseTeamPage(body) {
-      var $ = Cheerio.load(body);
-      var team = {
-        _id: parseInt(teamId),
-        name: $('div.big_head.subhead_head').text().replace(/\r|\n.*/gm, ''),
-        players: []
-      };
-      // TODO: Parse the team roster out and store it in mongo
-      $('div#content_attrib table.players tr').each(function(index, element) {
-        var href = $(element).find("td.player_name a").first().attr('href');
-        if (href == null) {
-          return;
-        }
-        // TODO: td.player_dc is the players attributes in order of str, spd, agi, jmp, sta, vis, con, blk, tak, thw, cat, cry, kck, pnt
-        var player = {
-          _id: parseInt(href.substring(href.indexOf('=') + 1)),
-          name: $(element).find("td.player_name a").text(),
-          archetype: determineArchetype($(element).find("td.player_archetype img").first().attr('onmouseover')),
-          position: $(element).find("td.player_position .position").text(),
-          level: parseInt($(element).find("td.player_level").first().text())
-        };
-
-        Database.db.collection('player')
-          .update({_id: player._id}, {$set: player}, {upsert: true}, function(error, result) {
-            if (error) {
-              return console.error("Error when updating player", player._id, error);
-            }
-            playerArchtypeCache[player._id] = player.archetype;
-          });
-        team.players.push(new DBRef("player", player._id));
-      });
-
-      return team;
-    }
-
-    request("team" + teamId, {url: Config.glbUrl + '/roster.pl?team_id=' + teamId}).then(function(content) {
-      var team = parseTeamPage(content.body);
-      team.created = content.created;
-
-      Database.db.collection('team').update({_id: team._id}, {$set: team}, {upsert: true}, function(error, result) {
-        if (error) {
-          return defer.reject("Unable to save the team", team, error);
-        }
-        return defer.resolve(team);
-      });
-    }).catch(function(e) {
-      return defer.reject("Unable to load team", teamId, e);
-    });
-    return defer.promise;
-  }
 };
 
 function determineArchetype(tip) {

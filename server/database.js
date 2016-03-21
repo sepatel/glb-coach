@@ -1,6 +1,7 @@
 var MongoClient = require('mongodb').MongoClient;
 var Async = require('async');
 var _ = require('underscore');
+var Q = require('q');
 
 var Config = require('../config');
 
@@ -21,7 +22,9 @@ Async.waterfall([
         type: play.type
       };
     }, function(err) {
-      if (err) callback(err);
+      if (err) {
+        callback(err);
+      }
 
       callback(null, mongodb);
     });
@@ -31,7 +34,9 @@ Async.waterfall([
     cursor.forEach(function(player) {
       me.playerArchtypeCache[player._id] = player.archetype;
     }, function(err) {
-      if (err) callback(err);
+      if (err) {
+        callback(err);
+      }
       callback(null, mongodb);
     });
   }
@@ -46,5 +51,48 @@ Async.waterfall([
 var me = module.exports = {
   db: null,
   playbook: {},
-  playerArchtypeCache: {}
+  playerArchtypeCache: {},
+  find: function(collectionName, query, fields, options) {
+    var collection = me.db.collection(collectionName);
+    return Q.ninvoke(collection, 'find', query, fields, options).then(function(cursor) {
+      return Q.ninvoke(cursor, 'toArray');
+    });
+  },
+  findCursor: function(collectionName, query, fields, options) {
+    var collection = me.db.collection(collectionName);
+    return Q.ninvoke(collection, 'find', query, fields, options);
+  },
+  findOne: function(collectionName, query, fields, options) {
+    var collection = me.db.collection(collectionName);
+    return Q.ninvoke(collection, 'findOne', query, fields, options).then(function(doc) {
+      if (doc == null) {
+        throw "Not found";
+      }
+      return doc;
+    });
+  },
+  fromMongo: function(src) {
+    if (_.isArray(src)) {
+      _.forEach(src, me.fromMongo);
+    } else if (src.hasOwnProperty('_id')) {
+      if (src._id.str) {
+        srd.id = src._id.str;
+      } else {
+        src.id = src._id;
+      }
+      delete src._id;
+    }
+
+    return src;
+  },
+  toMongo: function(src) {
+    if (_.isArray(src)) {
+      _.forEach(src, me.toMongo);
+    } else if (src.hasOwnProperty('id')) {
+      src._id = src.id;
+      delete src.id;
+    }
+
+    return src;
+  }
 };

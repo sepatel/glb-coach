@@ -1,0 +1,17 @@
+<div class="container">
+  <div class="text-center form-group">
+    <ol class="breadcrumb">
+      <li><a href="#/"><i class="fa fa-cog"></i> GLB Control Panel</a></li>
+      <li class="active">Game Planner</li>
+    </ol>
+  </div>
+
+  <div class="ss-card animate" ng-repeat="team in teams">
+    <div class="frame">
+      <div class="body">
+        <div><img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{team.id}}" style="width: 75px;"></div>
+        <div><strong>{{team.name}}</strong></div>
+      </div>
+    </div>
+  </div>
+</div>

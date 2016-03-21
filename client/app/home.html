@@ -1,5 +1,9 @@
 <div class="container">
-  <h2 class="text-center">GLB Control Panel</h2>
+  <div class="text-center form-group">
+    <ol class="breadcrumb">
+      <li class="active"><i class="fa fa-cog"></i> GLB Control Panel</li>
+    </ol>
+  </div>
 
   <div class="text-center">
     <div class="ss-card animate" tooltip="Generate build guides down to the day level precision">
@@ -21,7 +25,7 @@
     </div>
 
     <div class="ss-card animate" tooltip="Advanced Breakdown for Offensive AI situations">
-      <div class="frame">
+      <div class="frame" ng-click="link('/gamePlanner')">
         <div class="body">
           <div><img src="images/ai-book.png" style="width: 75px;"></div>
           <div><strong>Game Planner</strong></div>

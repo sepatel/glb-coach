@@ -4,6 +4,7 @@
   module.config(function($routeProvider) {
     $routeProvider.when('/build', {controller: 'BuildCtrl', templateUrl: 'app/build.html'});
     $routeProvider.when('/dataLoader', {controller: 'DataLoaderCtrl', templateUrl: 'app/data-loader.html'});
+    $routeProvider.when('/gamePlanner', {controller: 'GamePlannerCtrl', templateUrl: 'app/gamePlanner/index.html'});
 
     $routeProvider.when('/oai/:teamId', {controller: 'AnalyticsCtrl', templateUrl: 'app/analytics/offai.html'});
     $routeProvider.when('/gamePlan/:teamId', {controller: 'GamePlanCtrl', templateUrl: 'app/analytics/gameplan.html'});

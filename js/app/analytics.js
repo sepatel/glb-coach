@@ -1,6 +1,13 @@
 (function(angular) {
   var module = angular.module('app.analytics', ['ssNotify', 'util.rest']);
 
+  module.controller('GamePlannerCtrl', function($scope, NotifyService, RestService) {
+    var rest = new RestService("Game Planner");
+    rest.$get('/api/teams').then(function(teams) {
+      $scope.teams = teams;
+    });
+  });
+
   module.controller('AnalyticsCtrl', function($scope, $routeParams, $window, NotifyService, RestService) {
     var teamId = $routeParams.teamId;
     var rest = new RestService("Analytics");
