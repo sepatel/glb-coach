@@ -6,11 +6,14 @@
     </ol>
   </div>
 
-  <div class="ss-card animate" ng-repeat="team in teams">
-    <div class="frame">
-      <div class="body">
-        <div><img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{team.id}}" style="width: 75px;"></div>
-        <div><strong>{{team.name}}</strong></div>
+  <div class="text-center">
+    <div ng-if="!teams"><i class="fa fa-spin fa-spinner fa-5x"></i></div>
+    <div class="ss-card animate" ng-repeat="team in teams">
+      <div class="frame">
+        <div class="body">
+          <div><img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{team.id}}" style="width: 75px;"></div>
+          <div><strong>{{team.name}}</strong></div>
+        </div>
       </div>
     </div>
   </div>
