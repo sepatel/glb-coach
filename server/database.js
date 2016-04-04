@@ -52,24 +52,11 @@ var me = module.exports = {
   db: null,
   playbook: {},
   playerArchtypeCache: {},
-  find: function(collectionName, query, fields, options) {
-    var collection = me.db.collection(collectionName);
-    return Q.ninvoke(collection, 'find', query, fields, options).then(function(cursor) {
-      return Q.ninvoke(cursor, 'toArray');
-    });
+  find: function(collectionName, query) {
+    return me.db.collection(collectionName).find(query);
   },
-  findCursor: function(collectionName, query, fields, options) {
-    var collection = me.db.collection(collectionName);
-    return Q.ninvoke(collection, 'find', query, fields, options);
-  },
-  findOne: function(collectionName, query, fields, options) {
-    var collection = me.db.collection(collectionName);
-    return Q.ninvoke(collection, 'findOne', query, fields, options).then(function(doc) {
-      if (doc == null) {
-        throw "Not found";
-      }
-      return doc;
-    });
+  findOne: function(collectionName, query) {
+    return me.db.collection(collectionName).findOne(query);
   },
   fromMongo: function(src) {
     if (_.isArray(src)) {

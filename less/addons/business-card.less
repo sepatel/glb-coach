@@ -6,9 +6,34 @@
   width: (@business-card-width - @padding-base-horizontal);
   display: inline-block;
 
-  &.notification {
+  &.notification, &.active-primary {
     .frame {
       border-top: 4px solid @brand-primary;
+    }
+  }
+  &.active-secondary {
+    .frame {
+      border-top: 4px solid @brand-secondary;
+    }
+  }
+  &.active-success {
+    .frame {
+      border-top: 4px solid @brand-success;
+    }
+  }
+  &.active-info {
+    .frame {
+      border-top: 4px solid @brand-info;
+    }
+  }
+  &.active-warning {
+    .frame {
+      border-top: 4px solid @brand-warning;
+    }
+  }
+  &.active-danger {
+    .frame {
+      border-top: 4px solid @brand-danger;
     }
   }
 
@@ -62,7 +87,8 @@
     }
 
     .pull-top {
-      top: 0%;
+      position: absolute;
+      top: @padding-base-vertical;
       left: 50%;
       .translate(-50%, 0%);
       &.pull-left, &.pull-right {
@@ -70,14 +96,14 @@
         .translate(0%, 0%);
       }
       &.pull-left {
-        left: 1%;
+        left: @padding-base-horizontal;
       }
       &.pull-right {
-        right: 1%;
+        right: @padding-base-horizontal;
       }
     }
     .pull-bottom {
-      bottom: 1%;
+      bottom: @padding-base-vertical;
       left: 50%;
       .translate(-50%, 0%);
       &.pull-left, &.pull-right {
@@ -85,10 +111,10 @@
         .translate(0%, 0%);
       }
       &.pull-left {
-        left: 1%;
+        left: @padding-base-horizontal;
       }
       &.pull-right {
-        right: 1%;
+        right: @padding-base-horizontal;
       }
     }
   }

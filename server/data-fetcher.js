@@ -20,7 +20,7 @@ var me = module.exports = {
   login: login,
   build: {
     get: function() {
-      return Database.find('buildGuide');
+      return Database.find('buildGuide').toArray();
     },
     remove: function(buildId) {
       var defer = Q.defer();
@@ -42,6 +42,11 @@ var me = module.exports = {
           defer.resolve(build);
         });
       return defer.promise;
+    }
+  },
+  game: {
+    getVerses: function(teamId) {
+      return Database.find('game', {$or: [{'team.away.$id': teamId}, {'team.home.$id': teamId}]}).toArray();
     }
   },
   team: {
@@ -99,10 +104,7 @@ var me = module.exports = {
       return defer.promise;
     },
     getAll: function() {
-      return Database.find('team').then(function(teams) {
-        teams.forEach(function(team) {
-          Database.fromMongo(team);
-        });
+      return Database.find('team').toArray().then(function(teams) {
         teams.sort(function(a, b) {
           if (a.name > b.name) {
             return 1;
@@ -144,6 +146,8 @@ var me = module.exports = {
         var ids = $(replay).attr('href').replace(/.*game_id=(\d+)&pbp_id=(\d+)/, "$1 $2").split(" ");
         allPromises.push(me.getReplay(parseInt(ids[0]), parseInt(ids[1])));
       });
+
+      // TODO: Parse out the score and save it with the game
 
       Q.allSettled(allPromises).then(function(promises) {
         console.log("Retrieved game", gameId);

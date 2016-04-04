@@ -5,14 +5,17 @@ module.exports = function(app) {
   var router = app.Router();
 
   router.get('/team/:teamId', function(req, res) {
-    respond(res, DataFetcher.team.get(req.params.teamId));
+    respond(res, DataFetcher.team.get(parseInt(req.params.teamId)));
   });
   router.get('/teams', function(req, res) {
     respond(res, DataFetcher.team.getAll());
   });
 
+  router.get('/games/vs/:teamId', function(req, res) {
+    respond(res, DataFetcher.game.getVerses(parseInt(req.params.teamId)));
+  });
   router.get('/game/:gameId', function(req, res) {
-    respond(res, DataFetcher.getGame(req.params.gameId));
+    respond(res, DataFetcher.getGame(parseInt(req.params.gameId)));
   });
 
   router.get('/builds', function(req, res) {

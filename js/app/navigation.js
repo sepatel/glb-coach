@@ -20,7 +20,10 @@
   module.run(function($rootScope, $location) {
     $rootScope.link = function(path) {
       $location.path(path);
-    }
+    };
+    $rootScope.popupLink = function(path) {
+      $window.open(path, '_blank');
+    };
   });
 }(angular));
 

@@ -3,9 +3,44 @@
 
   module.controller('GamePlannerCtrl', function($scope, NotifyService, RestService) {
     var rest = new RestService("Game Planner");
+    var allTeams = [];
     rest.$get('/api/teams').then(function(teams) {
-      $scope.teams = teams;
+      $scope.teams = allTeams = teams;
     });
+
+    $scope.chooseTeam = function(team) {
+      $scope.activeTeam = team;
+      rest.$get('/api/games/vs/' + team._id).then(function(games) {
+        angular.forEach(games, function(game) {
+          game.$$active = true;
+          if (game.team.home.$id == team._id) {
+            game.vs = {
+              road: false,
+              teamId: game.team.away.$id,
+              name: allTeams.filter(function(t) {
+                return t._id == game.team.away.$id;
+              })[0].name
+            };
+          } else {
+            game.vs = {
+              road: true,
+              teamId: game.team.home.$id,
+              name: allTeams.filter(function(t) {
+                return t._id == game.team.home.$id;
+              })[0].name
+            };
+          }
+        });
+        // TODO: show the "vs" team team and that team's logo as well
+        $scope.games = games;
+      });
+    };
+
+    $scope.goBack = function() {
+      delete $scope.activeTeam;
+      delete $scope.games;
+      $scope.teams = allTeams;
+    };
   });
 
   module.controller('AnalyticsCtrl', function($scope, $routeParams, $window, NotifyService, RestService) {

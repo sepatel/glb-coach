@@ -37,10 +37,9 @@ module.exports = function(grunt) {
       },
       vendor: {
         src: [
-          'bower_components/jquery/dist/jquery.js', 'bower_components/angular/angular.js',
-          'bower_components/angular-animate/angular-animate.js', 'bower_components/angular-route/angular-route.js',
-          'bower_components/ui-utils/ui-utils.js', 'vendor/ui-bootstrap-tpls-0.12.0.js',
-          'bower_components/packery/dist/packery.pkgd.min.js'
+          'node_modules/jquery/dist/jquery.js', 'node_modules/angular/angular.js',
+          'node_modules/angular-animate/angular-animate.js', 'node_modules/angular-route/angular-route.js',
+          'node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js', 'node_modules/packery/dist/packery.pkgd.min.js'
         ],
         dest: 'client/js/vendor.min.js'
       }

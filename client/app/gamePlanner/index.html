@@ -6,13 +6,56 @@
     </ol>
   </div>
 
-  <div class="text-center">
+  <div ng-if="teams && !activeTeam" class="text-center form-group">
+    <label>Create Customized OAI against which team?</label>
+  </div>
+  <div class="text-center form-group">
     <div ng-if="!teams"><i class="fa fa-spin fa-spinner fa-5x"></i></div>
-    <div class="ss-card animate" ng-repeat="team in teams">
-      <div class="frame">
+    <div ng-if="!activeTeam" class="ss-card animate" ng-repeat="team in teams">
+      <div class="frame" ng-click="chooseTeam(team)">
         <div class="body">
-          <div><img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{team.id}}" style="width: 75px;"></div>
+          <div>
+            <img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{team._id}}" style="width: 75px;">
+          </div>
           <div><strong>{{team.name}}</strong></div>
+        </div>
+      </div>
+    </div>
+    <div ng-if="activeTeam" class="ss-card animate active-primary">
+      <div class="frame" ng-click="goBack()">
+        <div class="pull-top pull-left clickable"><i class="fa fa-reply fa-2x"></i></div>
+        <div class="body">
+          <div>
+            <img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{activeTeam._id}}" style="width: 75px;">
+          </div>
+          <div><strong>{{activeTeam.name}}</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div ng-if="activeTeam">
+    <div class="text-center form-group"><label>Using which games?</label></div>
+    <div class="form-group text-center">
+      <button class="btn btn-primary" ng-click="link('/oai/' + activeTeam._id)">Generate Intelligence</button>
+    </div>
+    <div class="form-group text-center">
+      <div ng-if="!games"><i class="fa fa-spinner fa-spin fa-5x"></i></div>
+      <div class="ss-card animate" ng-repeat="game in games">
+        <div class="frame" ng-click="game.$$active = !game.$$active">
+          <div ng-if="game.$$active" class="pull-top pull-right"><i class="fa fa-check fa-2x text-success"></i></div>
+          <div class="body">
+            <div class="inline">
+              <img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{game.vs.teamId}}" style="width: 70px;">
+            </div>
+            <div class="inline text-left">
+              <div class="ellipsis"><i class="fa fa-hashtag"></i> {{game._id}}</div>
+              <div class="ellipsis">
+                <strong><span ng-if="game.vs.road">@</span><span ng-if="!game.vs.road">vs</span>
+                  {{game.vs.name}}</strong>
+              </div>
+              <div class="ellipsis">Add score for this game</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
