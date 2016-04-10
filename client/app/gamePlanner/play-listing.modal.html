@@ -1,0 +1,41 @@
+<div class="panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title">
+      <strong>
+        {{analytic.playbook.formation}}
+        <span class="text-info">{{analytic.playbook.name}}</span>
+        <span class="text-muted">({{analytic.playbook.type}})</span>
+      </strong>
+    </h2>
+  </div>
+  <div class="panel-body" style="max-height: 800px; overflow: auto;">
+    <table class="table table-condensed table-striped">
+      <thead>
+      <tr>
+        <th class="text-nowrap">D & D</th>
+        <th>Yds</th>
+        <th>QB</th>
+        <th ng-if="analytic.plays[0].HB">HB</th>
+        <th ng-if="analytic.plays[0].FB">FB</th>
+        <th ng-if="analytic.plays[0].TE">TE</th>
+        <th ng-if="analytic.plays[0].BTE">BTE</th>
+        <th>Defense</th>
+        <th>Outcome</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr ng-repeat="play in analytic.plays" style="cursor: pointer;" ng-click="viewReplay(play)">
+        <td class="text-nowrap">{{play.down}} & {{play.distance}}</td>
+        <td>{{play.yards|number:2}}</td>
+        <td>{{play.QB}}</td>
+        <td ng-if="play.HB">{{play.HB}}</td>
+        <td ng-if="play.FB">{{play.FB}}</td>
+        <td ng-if="play.TE">{{play.TE}}</td>
+        <td ng-if="play.BTE">{{play.BTE}}</td>
+        <td class="text-nowrap">{{play.defense}}</td>
+        <td>{{play.outcome}}</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

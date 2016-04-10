@@ -17,6 +17,7 @@ Async.waterfall([
     var cursor = mongodb.collection('playbook').find();
     cursor.forEach(function(play) {
       me.playbook[play._id] = {
+        id: play._id,
         name: play.name,
         formation: play.formation,
         type: play.type

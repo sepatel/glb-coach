@@ -1,7 +1,7 @@
 (function(angular) {
   var module = angular.module('app.analytics', ['ssNotify', 'util.rest']);
 
-  module.controller('GamePlannerCtrl', function($scope, NotifyService, RestService) {
+  module.controller('GamePlannerCtrl', function($scope, $uibModal, NotifyService, RestService) {
     var rest = new RestService("Game Planner");
     var allTeams = [];
     rest.$get('/api/teams').then(function(teams) {
@@ -31,7 +31,6 @@
             };
           }
         });
-        // TODO: show the "vs" team team and that team's logo as well
         $scope.games = games;
       });
     };
@@ -39,41 +38,37 @@
     $scope.goBack = function() {
       delete $scope.activeTeam;
       delete $scope.games;
+      delete $scope.analytics;
       $scope.teams = allTeams;
     };
-  });
 
-  module.controller('AnalyticsCtrl', function($scope, $routeParams, $window, NotifyService, RestService) {
-    var teamId = $routeParams.teamId;
-    var rest = new RestService("Analytics");
-
-    $scope.viewReplay = function(play) {
-      $window.open('http://glb.warriorgeneral.com/game/replay.pl?game_id=' + play.gameId + '&pbp_id=' + play.replayId, "research");
-    };
-
-    function initialize() {
-      rest.$get('/api/team/' + teamId).then(function(team) {
-        $scope.team = team;
+    $scope.generateReport = function() {
+      $scope.$$loadAnalytics = true;
+      var gameIds = $scope.games.filter(function(game) {
+        return game.$$active;
+      }).map(function(game) {
+        return game._id;
       });
-
-      rest.$post('/api/offense/ai/formation', {teamId: teamId}).then(function(analytics) {
-        console.info("Analytics", analytics);
+      rest.$post('/api/offense/ai/playtype', {
+        teamId: $scope.activeTeam._id,
+        gameIds: gameIds
+      }).then(function(analytics) {
         angular.forEach(analytics, function(analyticsList, group) {
           angular.forEach(analyticsList, function(a) {
-            a.$$score = a.loss * -2 + a.bad * -1 + a.normal + a.good * 1.5 + a.great * 2 + a.awesome * 3;
+            a.$$score = a.yards.loss * -2 + a.yards.bad * -1 + a.yards.normal + a.yards.good * 1.5 + a.yards.great * 2 + a.yards.awesome * 3;
 
             if (a.$$score > 10) {
-              a.$$scoreType = "panel-primary";
+              a.$$scoreType = "active-primary";
             } else if (a.$$score > 3) {
-              a.$$scoreType = "panel-success";
+              a.$$scoreType = "active-success";
             } else if (a.$$score > 1) {
-              a.$$scoreType = "panel-secondary";
+              a.$$scoreType = "active-secondary";
             } else if (a.$$score < 1) {
-              a.$$scoreType = "panel-warning";
+              a.$$scoreType = "active-warning";
             } else if (a.$$score < -3) {
-              a.$$scoreType = "panel-danger";
+              a.$$scoreType = "active-danger";
             } else {
-              a.$$scoreType = "panel-default";
+              a.$$scoreType = "active-info";
             }
           });
 
@@ -83,60 +78,23 @@
         });
 
         $scope.analytics = analytics;
+        delete $scope.$$loadAnalytics;
       });
-    }
-
-    initialize();
-  });
-
-  module.controller('GamePlanCtrl', function($scope, $routeParams, $window, NotifyService, RestService) {
-    var teamId = $routeParams.teamId;
-    var rest = new RestService("Game Planner");
-
-    $scope.viewReplay = function(play) {
-      $window.open('http://glb.warriorgeneral.com/game/replay.pl?game_id=' + play.gameId + '&pbp_id=' + play.replayId, "research");
     };
 
-    function initialize() {
-      rest.$get('/api/team/' + teamId).then(function(team) {
-        $scope.team = team;
-      });
-      rest.$post('/api/offense/ai/gameplan', {teamId: teamId}).then(function(gamePlan) {
-        console.info("Game Plan", gamePlan);
-        angular.forEach(gamePlan, function(stats, group) {
-          stats.sort(function(a, b) {
-            if (a.formation > b.formation) {
-              return 1;
-            } else if (a.formation < b.formation) {
-              return -1;
-            }
-            return 0;
-          });
+    $scope.viewCard = function(analytic) {
+      var instance = $uibModal.open({
+        size: 'lg',
+        templateUrl: 'app/gamePlanner/play-listing.modal.html',
+        controller: function($scope, $window) {
+          $scope.analytic = analytic;
 
-          angular.forEach(stats, function(stat) {
-            var yd = stat.yards;
-            var score = yd.loss * -2 + yd.bad * -1 + yd.normal + yd.good * 1.5 + yd.great * 2 + yd.awesome * 3;
+          $scope.viewReplay = function(play) {
+            $window.open('http://glb.warriorgeneral.com/game/replay.pl?game_id=' + play.gameId + '&pbp_id=' + play.replayId, "research");
+          };
+        }
+      }).result;
+    };
 
-            if (score > 10) {
-              stat.$$score = "panel-primary";
-            } else if (score > 3) {
-              stat.$$score = "panel-success";
-            } else if (score > 1) {
-              stat.$$score = "panel-secondary";
-            } else if (score < 1) {
-              stat.$$score = "panel-warning";
-            } else if (score < -3) {
-              stat.$$score = "panel-danger";
-            } else {
-              stat.$$score = "panel-default";
-            }
-          });
-        });
-
-        $scope.gamePlan = gamePlan;
-      });
-    }
-
-    initialize();
   });
 }(angular));

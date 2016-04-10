@@ -1,10 +1,7 @@
 @import "../variables";
 @import "../mixins";
-
 @import "animations";
-
 @import "secondary";
-
 @import "business-card";
 @import "callout";
 @import "card";
@@ -14,3 +11,15 @@
 @import "notify";
 @import "table-rotated";
 @import "tiles";
+
+.modal-open {
+  .modal {
+    background-color: rgba(255, 255, 255, 0.8);
+    .transition(background 0.5s linear);
+  }
+}
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+

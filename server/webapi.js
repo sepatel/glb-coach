@@ -37,6 +37,13 @@ module.exports = function(app) {
   });
   */
 
+  router.post('/offense/ai/playtype', function(req, res) {
+    var opponentId = +req.body.teamId;
+    var gameIds = req.body.gameIds;
+    respond(res, GamePlanner.gamePlanByPlayType(opponentId, gameIds));
+  });
+
+  /*
   router.post('/offense/ai/gameplan', function(req, res) {
     var opponentId = +req.body.teamId;
     var gameIds = req.body.gameIds;
@@ -60,6 +67,7 @@ module.exports = function(app) {
       res.send({error: error});
     });
   });
+  */
 
   return router;
 };

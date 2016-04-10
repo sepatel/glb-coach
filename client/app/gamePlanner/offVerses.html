@@ -1,0 +1,112 @@
+<div>
+  <div class="container">
+    <div class="text-center form-group">
+      <ol class="breadcrumb">
+        <li><a href="#/"><i class="fa fa-cog"></i> GLB Control Panel</a></li>
+        <li><a href="#/gamePlanner">Game Planner</a></li>
+        <li class="active">{{team.name}}'s Defense</li>
+      </ol>
+    </div>
+  </div>
+
+  <div ng-if="!analytics"><i class="fa fa-spinner fa-spin fa-5x"></i></div>
+  <div ng-if="analytics|isEmpty">No Analytics Found</div>
+
+  <div uib-accordion="">
+    <div uib-accordion-group="" ng-repeat="(formation, analyticList) in analytics" is-open="$$isOpen">
+      <div uib-accordion-heading="">
+        <div><strong>{{formation}}</strong></div>
+      </div>
+      <div tileable="" ng-model="$$isOpen">
+        <div tile="" class="tilew2" type="{{analytic.$$scoreType}}" ng-repeat="analytic in analyticList">
+          <div tile-heading="">
+            <small class="pull-right" style="margin-top: 8px;">{{analytic.$$score}} of {{analytic.plays.length}} ({{100 * analytic.$$score / analytic.plays.length | number:2}}%)</small>
+            {{analytic._id.name}}
+            <small ng-switch="analytic._id.type">
+              <span ng-switch-when="Run_Inside">(inside)</span>
+              <span ng-switch-when="Run_Tackle">(tackle)</span>
+              <span ng-switch-when="Run_Outside">(outside)</span>
+              <span ng-switch-when="Run_Counter">(counter)</span>
+              <span ng-switch-when="Pass_Screen">(screen)</span>
+            </small>
+          </div>
+          <div>
+            <table class="table table-condensed table-striped">
+              <thead>
+              <tr>
+                <th>D & D</th>
+                <th>Yds</th>
+                <th>QB</th>
+                <th ng-if="analytic.plays[0].HB">HB</th>
+                <th ng-if="analytic.plays[0].FB">FB</th>
+                <th ng-if="analytic.plays[0].TE">TE</th>
+                <th ng-if="analytic.plays[0].BTE">BTE</th>
+                <th>Defense</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr ng-repeat="play in analytic.plays" style="cursor: pointer;" tooltip="{{play.outcome}}"
+                  ng-click="viewReplay(play)">
+                <td class="text-nowrap">{{play.down}} & {{play.distance}}</td>
+                <td>{{play.yards|number:2}}</td>
+                <td>{{play.QB}}</td>
+                <td ng-if="play.HB">{{play.HB}}</td>
+                <td ng-if="play.FB">{{play.FB}}</td>
+                <td ng-if="play.TE">{{play.TE}}</td>
+                <td ng-if="play.BTE">{{play.BTE}}</td>
+                <td>{{play.defense}}</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- div ng-repeat="analytic in analyticList" class="card card-h1 card-w1">
+        <div class="panel" ng-class="analytic.$$scoreType">
+          <div class="panel-heading">
+            <h2 class="panel-title">
+              {{analytic._id.name}}
+              <small ng-switch="analytic._id.type">
+                <span ng-switch-when="Run_Inside">(inside)</span>
+                <span ng-switch-when="Run_Tackle">(tackle)</span>
+                <span ng-switch-when="Run_Outside">(outside)</span>
+                <span ng-switch-when="Run_Counter">(counter)</span>
+                <span ng-switch-when="Pass_Screen">(screen)</span>
+              </small>
+              <small class="pull-right">{{analytic.$$score}}</small>
+            </h2>
+          </div>
+          <div class="panel-body">
+            <table class="table table-condensed table-striped">
+              <thead>
+              <tr>
+                <th>D & D</th>
+                <th>Yds</th>
+                <th>QB</th>
+                <th ng-if="analytic.plays[0].HB">HB</th>
+                <th ng-if="analytic.plays[0].FB">FB</th>
+                <th ng-if="analytic.plays[0].TE">TE</th>
+                <th ng-if="analytic.plays[0].BTE">BTE</th>
+                <th>Defense</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr ng-repeat="play in analytic.plays" style="cursor: pointer;" tooltip="{{play.outcome}}"
+                  ng-click="viewReplay(play)">
+                <td class="text-nowrap">{{play.down}} & {{play.distance}}</td>
+                <td>{{play.yards|number:2}}</td>
+                <td>{{play.QB}}</td>
+                <td ng-if="play.HB">{{play.HB}}</td>
+                <td ng-if="play.FB">{{play.FB}}</td>
+                <td ng-if="play.TE">{{play.TE}}</td>
+                <td ng-if="play.BTE">{{play.BTE}}</td>
+                <td>{{play.defense}}</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div -->
+    </div>
+  </div>
+</div>

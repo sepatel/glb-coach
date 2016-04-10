@@ -4,119 +4,47 @@ var Database = require('./database');
 var DBRef = require('mongodb').DBRef;
 
 module.exports = {
-  gamePlanOffAiFact: function(defensiveTeamId, gameIds) {
-    var defer = Q.defer();
+  gamePlanByPlayType: function(defensiveTeamId, gameIds) {
     var query = {
       defense: DBRef('team', defensiveTeamId),
       outcome: {$not: /^False start penalty/},
-      'offensivePlay.type': new RegExp(/Run|Pass_Screen/) // incomplete passes are inaccurate right now and throw off everything
+      offensivePlay: {$ne: null},
+      'offensivePlay.type': {$ne: 'Other'}
     };
     if (gameIds) {
       query.gameId = {$in: gameIds};
     }
-    Database.db.collection('play').mapReduce(offAiMapper, offAiReducer, {
-      query: query, out: {inline: 1}
-    }, function(err, records) {
-      if (err) {
-        return defer.reject(err);
-      }
 
-      var gamePlan = Database.db.collection('gamePlan');
-      // Step 1: Delete all gamePlan info for defensiveTeamId
-      gamePlan.remove({teamId: defensiveTeamId, type: 'offensive'}, function(error) {
-        if (error) {
-          return defer.reject(error);
+    var gamePlannerMapperByOffPlayType = function() {
+      var key = {playbook: this.offensivePlay};
+      var value = determineAnalyticValue(this, this.players);
+      //determinePlayerArchetype(value, this.players);
+      emit(key, value);
+    };
+
+    return Database.db.collection('play').mapReduce(gamePlannerMapperByOffPlayType, reduceAnalyticValues, {
+      query: query,
+      out: {inline: 1},
+      scope: {determinePlayerArchetype: determinePlayerArchetype, determineAnalyticValue: determineAnalyticValue}
+    }).then(function(records) {
+      var dataset = {
+        Run_Inside: [], Run_Tackle: [], Run_Outside: [], Run_Counter: [],
+        Pass_Screen: [], Pass_Short: [], Pass_Medium: [], Pass_Deep: []
+      };
+      records.forEach(function(record) {
+        if (!record._id.playbook.type) {
+          return;
         }
-
-        var inserts = [];
-        _.each(records, function(record) {
-          var def = Q.defer();
-          var doc = _.extend({
-            teamId: defensiveTeamId,
-            type: 'offensive'
-          }, record._id, record.value);
-          // Step 2: Save all results in normal fact table structure into gamePlan
-          gamePlan.insert(doc, function(error) {
-            if (error) {
-              return def.reject(error);
-            }
-            return def.resolve(doc);
-          });
-          inserts.push(def);
-        });
-        Q.allSettled(inserts).then(function() {
-          return defer.resolve(records);
-        }).catch(function(errors) {
-          return defer.reject(errors);
-        });
+        dataset[record._id.playbook.type].push(_.extend({
+          teamId: defensiveTeamId,
+          type: 'offensive'
+        }, record._id, record.value));
       });
+
+      return dataset;
     });
-
-    return defer.promise;
-  },
-  gamePlanOffAiFormation: function(defensiveTeamId) {
-    var analysis = {};
-    var gamePlan = Database.db.collection('gamePlan');
-    return Q.ninvoke(gamePlan, 'aggregate', {
-      $match: {teamId: defensiveTeamId}
-    }, {
-      $unwind: "$plays"
-    }, {
-      $project: {
-        _id: "$plays.type",
-        plays: {
-          QB: "$QB",
-          HB: "$HB",
-          FB: "$FB",
-          TE: "$TE",
-          BTE: "$BTE",
-          gameId: "$plays.gameId",
-          replayId: "$plays.replayId",
-          yards: "$plays.yards",
-          down: "$plays.down",
-          distance: "$plays.distance",
-          defense: "$plays.defense",
-          outcome: "$plays.outcome",
-          zone: "$zone"
-        },
-        yards: "$yards"
-      }
-    }, {
-      $group: {
-        _id: "$_id",
-        plays: {$addToSet: "$plays"},
-        loss: {$sum: "$yards.loss"},
-        bad: {$sum: "$yards.bad"},
-        normal: {$sum: "$yards.normal"},
-        good: {$sum: "$yards.good"},
-        great: {$sum: "$yards.great"},
-        awesome: {$sum: "$yards.awesome"}
-      }
-    }).then(function(cursor) {
-      var d = Q.defer();
-
-      function processRecords(docs) {
-        _.forEach(docs, function(doc) {
-          var formation = doc._id.formation;
-          if (!analysis.hasOwnProperty(formation)) {
-            analysis[formation] = [];
-          }
-          analysis[formation].push(doc);
-        });
-        d.resolve(analysis);
-      }
-
-      if (cursor instanceof Array) {
-        processRecords(cursor);
-      } else {
-        Q.ninvoke(cursor, "toArray").then(processRecords).catch(function(e) {
-          d.reject(e);
-        });
-      }
-
-      return d.promise;
-    });
-  },
+  }
+  /*
   gamePlanOffAiStats: function(defensiveTeamId) {
     var defer = Q.defer();
     var analysis = {};
@@ -307,11 +235,14 @@ module.exports = {
 
     return defer.promise;
   }
+  */
 };
 
+/*
 function offAiMapper() {
   var key = {
     formation: this.formation,
+    formationId: this.offensivePlay.id,
     QB: null,
     HB: null,
     FB: null,
@@ -324,72 +255,7 @@ function offAiMapper() {
   if (this.down < 3) {
     key.down = 1;
   }
-  this.players.forEach(function(player) {
-    if (player.position == 'QB') {
-      switch (player.archetype) {
-        case "Deep Passer":
-        case "Pocket Passer":
-          key.QB = "Passer";
-          break;
-        case "Scrambler":
-        case "Elusive Back":
-        case "Returner":
-          key.QB = "Rusher";
-          break;
-        default:
-          key.QB = player.archetype;
-      }
-    } else if (player.position == 'HB') {
-      switch (player.archetype) {
-        case 'Power Back':
-          key.HB = "Power";
-          break;
-        case 'Scat Back':
-          key.HB = "Catcher";
-          break;
-        case 'Elusive Back':
-          key.HB = "Rusher";
-          break;
-        default:
-          key.HB = player.archetype;
-      }
-    } else if (player.position == 'FB') {
-      switch (player.archetype) {
-        case 'Blocker':
-        case 'Special Teamer':
-          key.FB = "Blocker";
-          break;
-        case 'Rusher':
-          key.FB = "Rusher";
-          break;
-        case 'Scat Back':
-          key.FB = "Catcher";
-          break;
-        default:
-          key.FB = player.archetype;
-      }
-    } else if (player.position == 'TE') {
-      switch (player.archetype) {
-        case 'Blocker':
-        case 'Special Teamer':
-          if (key.TE) {
-            key.BTE = "Blocker";
-          } else {
-            key.TE = "Blocker";
-          }
-          break;
-        case 'Receiver':
-          if (key.TE) {
-            key.BTE = "Catcher";
-          } else {
-            key.TE = "Catcher";
-          }
-          break;
-        default:
-          key.TE = player.archetype;
-      }
-    }
-  });
+  determinePlayerArchetype(key, this.players);
 
   if (this.distance < 2) {
     key.distance = "0-2";
@@ -407,54 +273,12 @@ function offAiMapper() {
     key.zone = "redzone";
   }
 
-  var value = {
-    plays: [
-      {
-        gameId: this.gameId,
-        replayId: this.replayId,
-        yards: this.yards,
-        down: this.down,
-        distance: this.distance,
-        type: this.offensivePlay,
-        defense: this.defensivePlay,
-        outcome: this.outcome
-      }
-    ],
-    yards: {
-      loss: 0, // negative gains
-      bad: 0, // under 2 yard gains
-      normal: 0, // 2 to 4 yard gains
-      good: 0, // 4 to 7 yard gains
-      great: 0, // 7 to 20 yard gains
-      awesome: 0 // 20+ yard gains
-    }
-  };
-
-  if (this.outcome.match(/\[TD\]/)) {
-    if (this.yards < 2) {
-      this.yards += 2;
-    } else {
-      this.yards *= 2;
-    }
-  }
-  if (this.yards < 0.5) {
-    value.yards.loss++;
-  } else if (this.yards < 2.5) {
-    value.yards.bad++;
-  } else if (this.yards < 4) {
-    value.yards.normal++;
-  } else if (this.yards < 7) {
-    value.yards.good++;
-  } else if (this.yards < 20) {
-    value.yards.great++;
-  } else {
-    value.yards.awesome++;
-  }
-
+  var value = determineAnalyticValue(this);
   emit(key, value);
 }
+*/
 
-function offAiReducer(key, values) {
+function reduceAnalyticValues(key, values) {
   var returnValue = {plays: [], yards: {loss: 0, bad: 0, normal: 0, good: 0, great: 0, awesome: 0}};
   values.forEach(function(value) {
     returnValue.plays = returnValue.plays.concat(value.plays);
@@ -468,3 +292,119 @@ function offAiReducer(key, values) {
   return returnValue;
 }
 
+function determinePlayerArchetype(key, players) {
+  players.forEach(function(player) {
+    if (player.position == 'QB') {
+      switch (player.archetype) {
+        case "Scrambler":
+        case "Elusive Back":
+        case "Returner":
+          key.QB = "rQB";
+          break;
+        default:
+          key.QB = " ";
+      }
+    } else if (player.position == 'HB') {
+      switch (player.archetype) {
+        case 'Power Back':
+          key.HB = "pHB";
+          break;
+        case 'Scat Back':
+          key.HB = "cHB";
+          break;
+        default:
+          key.HB = " ";
+      }
+    } else if (player.position == 'FB') {
+      switch (player.archetype) {
+        case 'Blocker':
+        case 'Special Teamer':
+          key.FB = "bFB";
+          break;
+        case 'Rusher':
+          key.FB = "rFB";
+          break;
+        case 'Scat Back':
+          key.FB = "cFB";
+          break;
+        default:
+          key.FB = " ";
+      }
+    } else if (player.position == 'TE') {
+      switch (player.archetype) {
+        case 'Blocker':
+        case 'Special Teamer':
+          if (key.TE) {
+            key.BTE = "bTE";
+          } else {
+            key.TE = "bTE";
+          }
+          break;
+        case 'Receiver':
+          if (key.TE) {
+            key.BTE = "cTE";
+          } else {
+            key.TE = "cTE";
+          }
+          break;
+        default:
+          if (key.TE) {
+            key.BTE = " ";
+          } else {
+            key.TE = " ";
+          }
+      }
+    }
+  });
+}
+
+function determineAnalyticValue(play, players) {
+  var value = {
+    plays: [
+      {
+        gameId: play.gameId,
+        replayId: play.replayId,
+        yards: play.yards,
+        down: play.down,
+        distance: play.distance,
+        //type: play.offensivePlay,
+        defense: play.defensivePlay,
+        outcome: play.outcome
+      }
+    ],
+    yards: {
+      loss: 0, // negative gains
+      bad: 0, // under 2 yard gains
+      normal: 0, // 2 to 4 yard gains
+      good: 0, // 4 to 7 yard gains
+      great: 0, // 7 to 20 yard gains
+      awesome: 0 // 20+ yard gains
+    }
+  };
+  if (players) {
+    determinePlayerArchetype(value.plays[0], players);
+  }
+
+  if (play.outcome.match(/\[TD\]/)) {
+    if (play.yards < 2) {
+      play.yards += 2;
+    } else {
+      play.yards *= 2;
+    }
+  }
+  if (play.yards < 0.5) {
+    value.yards.loss++;
+  } else if (play.yards < 2.5) {
+    value.yards.bad++;
+  } else if (play.yards < 4) {
+    value.yards.normal++;
+  } else if (play.yards < 7) {
+    value.yards.good++;
+  } else if (play.yards < 20) {
+    value.yards.great++;
+  } else {
+    value.yards.awesome++;
+  }
+
+  return value;
+}

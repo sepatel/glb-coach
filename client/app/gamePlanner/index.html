@@ -2,7 +2,11 @@
   <div class="text-center form-group">
     <ol class="breadcrumb">
       <li><a href="#/"><i class="fa fa-cog"></i> GLB Control Panel</a></li>
-      <li class="active">Game Planner</li>
+      <li class="active">
+        <span ng-if="!activeTeam">Game Planner</span>
+        <span ng-if="activeTeam"><a href="" ng-click="goBack()">Game Planner</a></span>
+      </li>
+      <li ng-if="analytics" class="active">vs. {{activeTeam.name}}'s Defense</li>
     </ol>
   </div>
 
@@ -22,8 +26,8 @@
       </div>
     </div>
     <div ng-if="activeTeam" class="ss-card animate active-primary">
-      <div class="frame" ng-click="goBack()">
-        <div class="pull-top pull-left clickable"><i class="fa fa-reply fa-2x"></i></div>
+      <div class="frame">
+        <!-- div class="pull-top pull-left clickable"><i class="fa fa-reply fa-2x"></i></div -->
         <div class="body">
           <div>
             <img src="http://glb.warriorgeneral.com/game/team_pic.pl?team_id={{activeTeam._id}}" style="width: 75px;">
@@ -33,10 +37,11 @@
       </div>
     </div>
   </div>
-  <div ng-if="activeTeam">
+
+  <div ng-if="activeTeam && !analytics && !$$loadAnalytics">
     <div class="text-center form-group"><label>Using which games?</label></div>
     <div class="form-group text-center">
-      <button class="btn btn-primary" ng-click="link('/oai/' + activeTeam._id)">Generate Intelligence</button>
+      <button class="btn btn-primary" ng-click="generateReport()">Generate Intelligence</button>
     </div>
     <div class="form-group text-center">
       <div ng-if="!games"><i class="fa fa-spinner fa-spin fa-5x"></i></div>
@@ -60,4 +65,110 @@
       </div>
     </div>
   </div>
-</div>
+
+  <div ng-if="$$loadAnalytics" class="text-center"><i class="fa fa-spinner fa-spin fa-5x"></i></div>
+  <div ng-if="analytics">
+    <div ng-if="analytics|isEmpty">No Analytics Found</div>
+    <div uib-accordion="">
+      <div uib-accordion-group="" ng-if="analyticList.length" class="row"
+          ng-repeat="(type, analyticList) in analytics" is-open="$$isOpen">
+        <div uib-accordion-heading="">
+          <div><strong>{{type}}</strong></div>
+        </div>
+        <div class="ss-card animate" ng-class="analytic.$$scoreType" ng-repeat="analytic in analyticList">
+          <div class="frame" ng-click="viewCard(analytic)">
+            <div class="pull-top"><strong>{{analytic.playbook.name}}</strong></div>
+            <!-- div class="pull-bottom pull-left">
+              <small class="text-muted">
+                {{analytic.$$score}} of {{analytic.plays.length}}
+                ({{100 * analytic.$$score / analytic.plays.length | number:2}}%)
+              </small>
+            </div -->
+            <div class="body">
+              <div class="inline">
+                <img ng-src="http://glb.warriorgeneral.com/images/plays/{{analytic.playbook.id}}.gif"
+                    style="width: 120px;">
+              </div>
+              <div class="inline" style="max-width: 120px;">
+                <div class="text-info">{{analytic.playbook.formation}}</div>
+                <small class="col-md-6">
+                  <div class="ellipsis text-nowrap" ng-class="{'text-muted': !analytic.yards.awesome}">
+                    {{analytic.yards.awesome}} super
+                  </div>
+                  <div class="ellipsis text-nowrap" ng-class="{'text-muted': !analytic.yards.good}">
+                    {{analytic.yards.good}} good
+                  </div>
+                  <div class="ellipsis text-nowrap" ng-class="{'text-muted': !analytic.yards.bad}">
+                    {{analytic.yards.bad}} bad
+                  </div>
+                </small>
+                <small class="col-md-6">
+                  <div class="ellipsis text-nowrap" ng-class="{'text-muted': !analytic.yards.great}">
+                    {{analytic.yards.great}} great
+                  </div>
+                  <div class="ellipsis text-nowrap" ng-class="{'text-muted': !analytic.yards.normal}">
+                    {{analytic.yards.normal}} normal
+                  </div>
+                  <div class="ellipsis text-nowrap" ng-class="{'text-muted': !analytic.yards.loss}">
+                    {{analytic.yards.loss}} loss
+                  </div>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--div tileable="" ng-model="$$isOpen">
+          <div tile="" class="tilew3" type="{{analytic.$$scoreType}}" ng-repeat="analytic in analyticList">
+            <div tile-heading="">
+              <small class="pull-right" style="margin-top: 8px;">{{analytic.$$score}} of {{analytic.plays.length}}
+                ({{100 * analytic.$$score / analytic.plays.length | number:2}}%)
+              </small>
+              {{analytic._id.name}}
+              <small ng-switch="analytic._id.type">
+                <span ng-switch-when="Run_Inside">(inside)</span>
+                <span ng-switch-when="Run_Tackle">(tackle)</span>
+                <span ng-switch-when="Run_Outside">(outside)</span>
+                <span ng-switch-when="Run_Counter">(counter)</span>
+                <span ng-switch-when="Pass_Screen">(screen)</span>
+              </small>
+            </div>
+            <div>
+              <div style="display: inline-block; position: absolute; left: 0px; width: 30%;">
+                <img ng-src="'http://glb.warriorgeneral.com/images/plays/{{analytic.playbook.id}}.gif" style="width: 100%;">
+              </div>
+              <div style="display: inline-block; vertical-align: top; width: 69%; float: right;">
+                <table class="table table-condensed table-striped">
+                  <thead>
+                  <tr>
+                    <th>D & D</th>
+                    <th>Yds</th>
+                    <th>QB</th>
+                    <th ng-if="analytic.plays[0].HB">HB</th>
+                    <th ng-if="analytic.plays[0].FB">FB</th>
+                    <th ng-if="analytic.plays[0].TE">TE</th>
+                    <th ng-if="analytic.plays[0].BTE">BTE</th>
+                    <th>Defense</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr ng-repeat="play in analytic.plays" style="cursor: pointer;" tooltip="{{play.outcome}}"
+                      ng-click="viewReplay(play)">
+                    <td class="text-nowrap">{{play.down}} & {{play.distance}}</td>
+                    <td>{{play.yards|number:2}}</td>
+                    <td>{{play.QB}}</td>
+                    <td ng-if="play.HB">{{play.HB}}</td>
+                    <td ng-if="play.FB">{{play.FB}}</td>
+                    <td ng-if="play.TE">{{play.TE}}</td>
+                    <td ng-if="play.BTE">{{play.BTE}}</td>
+                    <td>{{play.defense}}</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div -->
+      </div>
+    </div>
+  </div>
