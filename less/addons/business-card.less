@@ -59,7 +59,6 @@
       top: 50%;
       left: 50%;
       width: 100%;
-      text-overflow: ellipsis;
       text-align: center;
       .translate(-50%, -50%);
 
@@ -73,6 +72,9 @@
         }
         .ellipsis {
           max-width: (@business-card-width - @padding-base-horizontal * 2 - 100);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
       }
     }

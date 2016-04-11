@@ -125,10 +125,8 @@ var me = module.exports = {
       var $ = Cheerio.load(body);
       var game = {
         _id: gameId,
-        team: {
-          away: null,
-          home: null
-        }
+        score: {away: 0, home: 0},
+        team: {away: null, home: null}
       };
 
       var allPromises = [];
@@ -148,6 +146,9 @@ var me = module.exports = {
       });
 
       // TODO: Parse out the score and save it with the game
+      var scores = $('div#scoreboard .team_row .total');
+      game.score.home = parseInt(scores.first().text());
+      game.score.away = parseInt(scores.last().text());
 
       Q.allSettled(allPromises).then(function(promises) {
         console.log("Retrieved game", gameId);
