@@ -299,6 +299,7 @@ function determinePlayerArchetype(key, players) {
         case "Scrambler":
         case "Elusive Back":
         case "Returner":
+        case "Rusher":
           key.QB = "rQB";
           break;
         default:
@@ -307,10 +308,11 @@ function determinePlayerArchetype(key, players) {
     } else if (player.position == 'HB') {
       switch (player.archetype) {
         case 'Power Back':
+        case "Rusher":
           key.HB = "pHB";
           break;
         case 'Scat Back':
-          key.HB = "cHB";
+          key.HB = "rHB";
           break;
         default:
           key.HB = " ";
@@ -322,10 +324,10 @@ function determinePlayerArchetype(key, players) {
           key.FB = "bFB";
           break;
         case 'Rusher':
-          key.FB = "rFB";
+          key.FB = "pFB";
           break;
         case 'Scat Back':
-          key.FB = "cFB";
+          key.FB = "rFB";
           break;
         default:
           key.FB = " ";
@@ -342,9 +344,9 @@ function determinePlayerArchetype(key, players) {
           break;
         case 'Receiver':
           if (key.TE) {
-            key.BTE = "cTE";
+            key.BTE = "rTE";
           } else {
-            key.TE = "cTE";
+            key.TE = "rTE";
           }
           break;
         default:

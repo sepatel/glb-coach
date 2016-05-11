@@ -164,7 +164,7 @@ var me = module.exports = {
     request("game" + gameId, {url: Config.glbUrl + '/game.pl?game_id=' + gameId + '&mode=pbp'}).then(function(content) {
       parseGamePage(content.body).then(function(game) {
         game.created = content.created;
-        Database.db.collection('game').update({_id: game._id}, {$set: game}, {upsert: true}, function(error, result) {
+        Database.db.collection('game').updateOne({_id: game._id}, {$set: game}, {upsert: true}, function(error, result) {
           if (error) {
             return defer.reject("Unable to save the game", game, error);
           }
@@ -222,7 +222,14 @@ var me = module.exports = {
         marker: parseFloat(timeMatch[6] || 0),
         players: [],
         offense: awayId,
-        defense: homeId
+        defense: homeId,
+        pass: {
+          intercepted: false,
+          incomplete: false,
+          hurried: false,
+          deflected: false,
+          distance: 0
+        }
       };
 
       if (timeMatch[5] == 'OWN') {
@@ -264,8 +271,10 @@ var me = module.exports = {
         }
       });
       if (!play.outcome.match(/(Off|Def)ensive Timeout Called: (.+)/)) {
-        //console.info("Cannot do *ABS* distance because loss of yards becomes inaccurate information then. Find better way!!!");
         play.yards = (Math.abs(ballPlays[ballPlays.length - 1].y - ballPlays[0].y) - 5) / 3;
+        if (play.formation == 'Shotgun 3WR') {
+          play.yards -= 2.5; // shotgun plays for some reason are 2.5 yards farther back (sometimes) to start with.
+        }
 
         // TODO: Deflected passes should be treated as 0 yards, perhaps a new field for distance ball travelled to know if screens or what are happening
 
@@ -275,6 +284,21 @@ var me = module.exports = {
           .text()
           .trim()
           .replace(/Offense Play:/, ''), play.formation);
+      }
+      if (play.outcome.match(/\[deflected by(.+?)\]/)) {
+        play.pass.deflected = true;
+      }
+      if (play.outcome.match(/\(incomplete.*?| \- incomplete\)/)) {
+        play.pass.incomplete = true;
+        play.pass.distance = play.yards;
+        play.yards = 0;
+      }
+      if (play.outcome.match(/, hurried by/)) {
+        play.hurried = true;
+      }
+      if (play.outcome.match(/intercepted by.*/)) {
+        play.pass.intercepted = true;
+        play.yards *= -1;
       }
 
       Database.db.collection('play')
@@ -466,7 +490,7 @@ function login() {
       });
     } else {
       for (var i in account.cookies || {}) {
-        cookieJar.add(Request.cookie(i + "=" + account.cookies[i]), Config.glbUrl);
+        cookieJar.setCookie(Request.cookie(i + "=" + account.cookies[i]), Config.glbUrl);
       }
 
       activeAccount = account;
@@ -484,7 +508,7 @@ function request(cacheId, options, timeout) {
       return {body: realBody, created: stat.mtime};
     });
   }).catch(function(e) {
-    console.info("Failure to read cache, retrieving", cacheId, e.stack);
+    console.info("Failure to read cache, retrieving", cacheId);
 
     return me.login().then(function(account) {
       var defer = Q.defer();
